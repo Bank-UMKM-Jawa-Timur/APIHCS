@@ -18,3 +18,4 @@ $router->get('/', function () use ($router) {
 });
 
 $router->post('/login', 'KaryawanController@login');
+$router->post('/logout', 'KaryawanController@logout');

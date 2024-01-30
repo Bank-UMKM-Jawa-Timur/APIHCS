@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\KaryawanModel;
 use Exception;
 use finfo;
 use Illuminate\Database\QueryException;
@@ -36,7 +37,18 @@ class KaryawanController extends Controller
             if($karyawan != null){
                 if(!Hash::check($request->get('password'), $karyawan->password)){
                     $message = 'Password yang anda masukkan salah';
+                } else if(DB::table('personal_access_tokens')->where('tokenable_id', $request->get('nip'))->count() > 0) {
+                    $message = 'Akun sedang digunakan di perangkat lain.';
                 } else {
+                    DB::table('personal_access_tokens')
+                        ->insert([
+                            'tokenable_type' => 'api',
+                            'name' => 'api',
+                            'tokenable_id' => $request->get('nip'),
+                            'token' => Hash::make($request->get('nip')),
+                            'created_at' => date('Y-m-d H:i:s')
+                        ]);
+                    
                     $status = 1;
                     $message = 'Berhasil login';
                     $karyawan = DB::table('mst_karyawan')
@@ -121,6 +133,40 @@ class KaryawanController extends Controller
                 'status' => $status,
                 'message' => $message,
                 'data' => $data
+            ];
+
+            return response()->json($response, $responseCode);
+        }
+    }
+
+    public function logout(Request $request){
+        $status = 0;
+        $message = '';
+        $responseCode = Response::HTTP_UNAUTHORIZED;
+
+        DB::beginTransaction();
+        try{
+            $responseCode = Response::HTTP_OK;
+            $data = DB::table('personal_access_tokens')
+                ->where('tokenable_id', $request->get('nip'))
+                ->delete();
+            DB::commit();
+            $message = 'Berhasil logout.';
+            $status = 1;
+        } catch(Exception $e) {
+            DB::rollBack();
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } catch(QueryException $e) {
+            DB::rollBack();
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } finally {
+            $response = [
+                'status' => $status,
+                'message' => $message,
             ];
 
             return response()->json($response, $responseCode);

@@ -2,20 +2,13 @@
 
 namespace App\Models;
 
-use App\Enum\KategoriPenonaktifan;
-use App\Service\EntityService;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
-use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Traits\HasRoles;
 
-class KaryawanModel extends Authenticatable
+class KaryawanModel extends Model implements Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles, HasApiTokens;
+    use HasFactory;
 
     protected $table = 'mst_karyawan';
     protected $primaryKey = 'nip';
@@ -51,26 +44,4 @@ class KaryawanModel extends Authenticatable
         'kategori_penonaktifan',
         'sk_pemberhentian',
     ];
-
-    public function entitas(): Attribute
-    {
-        return new Attribute(
-            get: fn ($value, $attributes) => EntityService::getEntity($attributes['kd_entitas'])
-        );
-    }
-
-    public function agama()
-    {
-        return $this->belongsTo(AgamaModel::class, 'kd_agama', 'kd_agama');
-    }
-
-    public function jabatan()
-    {
-        return $this->belongsTo(JabatanModel::class, 'kd_jabatan', 'kd_jabatan');
-    }
-
-    public function bagian()
-    {
-        return $this->belongsTo(BagianModel::class, 'kd_bagian', 'kd_bagian');
-    }
 }
