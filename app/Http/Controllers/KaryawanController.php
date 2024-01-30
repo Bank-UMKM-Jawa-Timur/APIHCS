@@ -40,6 +40,7 @@ class KaryawanController extends Controller
                 } else if(DB::table('personal_access_tokens')->where('tokenable_id', $request->get('nip'))->count() > 0) {
                     $message = 'Akun sedang digunakan di perangkat lain.';
                 } else {
+                    DB::beginTransaction();
                     DB::table('personal_access_tokens')
                         ->insert([
                             'tokenable_type' => 'api',
@@ -68,6 +69,7 @@ class KaryawanController extends Controller
                             'mst_karyawan.status_jabatan',
                             'mst_karyawan.ket_jabatan',
                             'mst_karyawan.kd_entitas',
+                            'mst_karyawan.jk',
                             'mst_jabatan.nama_jabatan',
                             'mst_bagian.nama_bagian'
                         )
@@ -76,6 +78,7 @@ class KaryawanController extends Controller
                     $dataKaryawan = new stdClass;
                     $dataKaryawan->nip = $karyawan->nip;
                     $dataKaryawan->nama_karyawan = $karyawan->nama_karyawan;
+                    $dataKaryawan->jenis_kelamin = $karyawan->jk;
                     $dataKaryawan->entitas = $this->getEntity($karyawan->kd_entitas);
                     $prefix = match ($karyawan->status_jabatan) {
                         'Penjabat' => 'Pj. ',
@@ -114,16 +117,19 @@ class KaryawanController extends Controller
                     $dataKaryawan->display_jabatan = $display_jabatan;
                     // End get data karyawan
 
+                    DB::commit();
                     $data = $dataKaryawan;
                 }
             } else {
                 $message = 'NIP tidak dapat ditemukan';
             }
         } catch (Exception $e){
+            DB::rollBack();
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
         } catch (QueryException $e){
+            DB::rollBack();
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
