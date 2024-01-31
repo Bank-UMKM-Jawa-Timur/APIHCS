@@ -19,3 +19,8 @@ $router->get('/', function () use ($router) {
 
 $router->post('/login', 'KaryawanController@login');
 $router->post('/logout', 'KaryawanController@logout');
+
+$router->group(['prefix' => 'slip-gaji'], function () use ($router) {
+    $router->get('/list', 'SlipGajiController@list');
+    $router->get('/detail/{id}', 'SlipGajiController@detail');
+});
