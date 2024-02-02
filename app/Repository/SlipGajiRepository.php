@@ -336,12 +336,12 @@ class SlipGajiRepository
             } else {
                 $jp_1_persen = round($gaji * ($persen_jp_pengurang / 100), 2);
             }
-            $potongan->dpp = $dpp;
-            $potongan->jp_1_persen = $jp_1_persen;
-            $potongan->kredit_koperasi = $data->kredit_koperasi;
-            $potongan->iuran_koperasi = $data->iuran_koperasi;
-            $potongan->kredit_pegawai = $data->kredit_pegawai;
-            $potongan->iuran_ik = $data->iuran_ik;
+            $potongan->dpp = (int) $dpp;
+            $potongan->jp_1_persen = (int) $jp_1_persen;
+            $potongan->kredit_koperasi = (int) $data->kredit_koperasi;
+            $potongan->iuran_koperasi = (int) $data->iuran_koperasi;
+            $potongan->kredit_pegawai = (int) $data->kredit_pegawai;
+            $potongan->iuran_ik = (int) $data->iuran_ik;
 
             // Get BPJS TK
             if ($obj_gaji->bulan > 2) {
@@ -364,20 +364,20 @@ class SlipGajiRepository
 
             // Penghasilan rutin
             $penghasilan_rutin = $gaji + $jamsostek;
-            $data->jamsostek = $jamsostek;
-            $data->bpjs_tk = $bpjs_tk;
-            $data->bpjs_kesehatan = $bpjs_kesehatan;
+            $data->jamsostek = (int) $jamsostek;
+            $data->bpjs_tk = (int) $bpjs_tk;
+            $data->bpjs_kesehatan = (int) $bpjs_kesehatan;
             $total_potongan = (int) $data->kredit_koperasi + (int) $data->iuran_koperasi + (int) $data->kredit_pegawai + (int) $data->iuran_ik + $dpp + $jp_1_persen;
-            $potongan->total_potongan = $total_potongan;
+            $potongan->total_potongan = (int) $total_potongan;
             $data->potongan = $potongan;
             // End GET POTONGAN
             
             // GET Gaji bersih
-            $total_diterima = $data->total_gaji - $total_potongan;
-            $data->total_diterima = $total_diterima;
-            $data_list->total_diterima = $total_diterima;
-            $data_list->total_potongan = $total_potongan;
-            $data_list->total_gaji = $data->total_gaji;
+            $total_diterima = (int) $data->total_gaji - $total_potongan;
+            $data->total_diterima = (int) $total_diterima;
+            $data_list->total_diterima = (int) $total_diterima;
+            $data_list->total_potongan = (int) $total_potongan;
+            $data_list->total_gaji = (int) $data->total_gaji;
             $data->data_list = $data_list;
             $data->terbilang = strtoupper($this->terbilang($total_diterima));
         }
