@@ -151,11 +151,11 @@ class SlipGajiRepository
                     $jp_1_persen = round($gaji * ($persen_jp_pengurang / 100), 2);
                 }
                 $potongan->dpp = $dpp;
-                $potongan->jp_1_persen = $jp_1_persen;
-                $potongan->kredit_koperasi = $value->kredit_koperasi;
-                $potongan->iuran_koperasi = $value->iuran_koperasi;
-                $potongan->kredit_pegawai = $value->kredit_pegawai;
-                $potongan->iuran_ik = $value->iuran_ik;
+                $potongan->jp_1_persen = (int) $jp_1_persen;
+                $potongan->kredit_koperasi = (int) $value->kredit_koperasi;
+                $potongan->iuran_koperasi = (int) $value->iuran_koperasi;
+                $potongan->kredit_pegawai = (int) $value->kredit_pegawai;
+                $potongan->iuran_ik = (int) $value->iuran_ik;
 
                 // Get BPJS TK
                 if ($obj_gaji->bulan > 2) {
@@ -178,22 +178,22 @@ class SlipGajiRepository
 
                 // Penghasilan rutin
                 $penghasilan_rutin = $gaji + $jamsostek;
-                $value->jamsostek = $jamsostek;
-                $value->bpjs_tk = $bpjs_tk;
-                $value->bpjs_kesehatan = $bpjs_kesehatan;
+                $value->jamsostek = (int) $jamsostek;
+                $value->bpjs_tk = (int) $bpjs_tk;
+                $value->bpjs_kesehatan = (int) $bpjs_kesehatan;
                 $total_potongan = (int) $value->kredit_koperasi + (int) $value->iuran_koperasi + (int) $value->kredit_pegawai + (int) $value->iuran_ik + $dpp + $jp_1_persen;
-                $potongan->total_potongan = $total_potongan;
+                $potongan->total_potongan = (int) $total_potongan;
                 $value->potongan = $potongan;
                 // End GET POTONGAN
                 
                 // GET Gaji bersih
-                $total_diterima = $value->total_gaji - $total_potongan;
-                $value->total_diterima = $total_diterima;
-                $data_list->total_diterima = $total_diterima;
-                $data_list->total_potongan = $total_potongan;
-                $data_list->total_gaji = $value->total_gaji;
-                $data_list->bulan = $value->bulan;
-                $data_list->tahun = $tahun;
+                $total_diterima = (int) $value->total_gaji - $total_potongan;
+                $value->total_diterima = (int) $total_diterima;
+                $data_list->total_diterima = (int) $total_diterima;
+                $data_list->total_potongan = (int) $total_potongan;
+                $data_list->total_gaji = (int) $value->total_gaji;
+                $data_list->bulan = (int) $value->bulan;
+                $data_list->tahun = (int) $tahun;
                 $value->data_list = $data_list;
             }
         }
