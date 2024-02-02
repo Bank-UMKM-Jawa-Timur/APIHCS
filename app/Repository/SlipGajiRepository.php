@@ -64,6 +64,17 @@ class SlipGajiRepository
 
         if($data != null){
             foreach($data as $key => $value){
+                $tj_khusus = 0;
+                if ($value->tj_ti > 0) {
+                    $tj_khusus += $value->tj_ti;
+                }
+                if ($value->tj_multilevel > 0) {
+                    $tj_khusus += $value->tj_multilevel;
+                }
+                if ($value->tj_fungsional > 0) {
+                    $tj_khusus += $value->tj_fungsional;
+                }
+                $value->tj_khusus = $tj_khusus;
                 $batch = DB::table('batch_gaji_per_bulan')->find($value->batch_id);
                 if ($batch) {
                     $hitungan_penambah = DB::table('pemotong_pajak_tambahan')
@@ -250,6 +261,17 @@ class SlipGajiRepository
             $karyawan = DB::table('mst_karyawan')
                 ->where('nip', $data->nip)
                 ->first();
+            $tj_khusus = 0;
+            if ($data->tj_ti > 0) {
+                $tj_khusus += $data->tj_ti;
+            }
+            if ($data->tj_multilevel > 0) {
+                $tj_khusus += $data->tj_multilevel;
+            }
+            if ($data->tj_fungsional > 0) {
+                $tj_khusus += $data->tj_fungsional;
+            }
+            $data->tj_khusus = $tj_khusus;
             $batch = DB::table('batch_gaji_per_bulan')->find($data->batch_id);
             if ($batch) {
                 $hitungan_penambah = DB::table('pemotong_pajak_tambahan')
