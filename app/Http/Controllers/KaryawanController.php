@@ -80,6 +80,7 @@ class KaryawanController extends Controller
                         ->first();
                         
                     $dataKaryawan = new stdClass;
+                    $returnData = new stdClass;
                     $mulaKerja = Carbon::create($karyawan->tanggal_pengangkat);
                     $waktuSekarang = Carbon::now();
                     $hitung = $waktuSekarang->diff($mulaKerja);
@@ -87,12 +88,12 @@ class KaryawanController extends Controller
                     $bulanKerja = (int) $hitung->format('%m'); 
                     $masaKerja = $hitung->format('%y Tahun, %m Bulan');
                     
-                    $dataKaryawan->nip = $karyawan->nip;
-                    $dataKaryawan->nama_karyawan = $karyawan->nama_karyawan;
-                    $dataKaryawan->jenis_kelamin = $karyawan->jk;
-                    $dataKaryawan->tanggal_bergabung = Carbon::parse($karyawan->tanggal_pengangkat)->translatedFormat('d F Y');
-                    $dataKaryawan->lama_kerja = $masaKerja;
-                    $dataKaryawan->no_rekening = $karyawan->no_rekening;
+                    $returnData->nip = $karyawan->nip;
+                    $returnData->nama_karyawan = $karyawan->nama_karyawan;
+                    $returnData->jenis_kelamin = $karyawan->jk;
+                    $returnData->tanggal_bergabung = Carbon::parse($karyawan->tanggal_pengangkat)->translatedFormat('d F Y');
+                    $returnData->lama_kerja = $masaKerja;
+                    $returnData->no_rekening = $karyawan->no_rekening;
                     $dataKaryawan->entitas = $this->getEntity($karyawan->kd_entitas);
                     $prefix = match ($karyawan->status_jabatan) {
                         'Penjabat' => 'Pj. ',
@@ -128,11 +129,11 @@ class KaryawanController extends Controller
                     }
         
                     $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $karyawan?->nama_bagian . ' ' . $ket;
-                    $dataKaryawan->display_jabatan = $display_jabatan;
+                    $returnData->display_jabatan = $display_jabatan;
                     // End get data karyawan
 
                     DB::commit();
-                    $data = $dataKaryawan;
+                    $data = $returnData;
                 }
             } else {
                 $message = 'NIP tidak dapat ditemukan';
