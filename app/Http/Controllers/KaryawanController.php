@@ -260,4 +260,9 @@ class KaryawanController extends Controller
             'cab' => $cab
         ];
     }
+
+    public function addEntity($karyawan)
+    {
+        return $this->getEntity($karyawan);
+    }
 }

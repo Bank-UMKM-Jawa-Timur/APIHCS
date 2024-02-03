@@ -2,7 +2,9 @@
 
 namespace App\Repository;
 
+use App\Http\Controllers\KaryawanController;
 use Illuminate\Support\Facades\DB;
+use stdClass;
 
 class SlipGajiRepository
 {
@@ -222,6 +224,7 @@ class SlipGajiRepository
                         'batch.tanggal_final',
                         'batch.file',
                         'batch.status',
+                        'batch.kd_entitas as entitas_gaji',
                         'gaji.nip',
                         DB::raw("CAST(gaji.bulan AS SIGNED) AS bulan"),
                         'gaji.gj_pokok',
@@ -261,6 +264,91 @@ class SlipGajiRepository
             $karyawan = DB::table('mst_karyawan')
                 ->where('nip', $data->nip)
                 ->first();
+
+            $ttdKaryawan = new stdClass;
+            if($data->entitas_gaji != '000'){
+                $kantorCabang = DB::table('mst_cabang')
+                    ->where('kd_cabang', $data->entitas_gaji)
+                    ->first();
+                $dataPincab = DB::table('mst_karyawan')
+                    ->where('kd_jabatan', 'PC')
+                    ->where('kd_entitas', $data->entitas_gaji)
+                    ->first();
+                $display_jabatan = 'Pemimpin Cabang';
+                $kantor = $kantorCabang->nama_cabang;
+            } else {
+                $kantor = 'Surabaya';
+                $pincab = new stdClass;
+                $dataPincab = DB::table('mst_karyawan')
+                    ->where('mst_karyawan.kd_jabatan','PIMDIV')
+                    ->where('mst_karyawan.kd_entitas','UMUM')
+                    ->leftJoin('mst_cabang', 'mst_cabang.kd_cabang', 'mst_karyawan.kd_entitas')
+                    ->leftJoin('mst_bagian', 'mst_bagian.kd_bagian', 'mst_karyawan.kd_bagian')
+                    ->leftJoin('mst_pangkat_golongan', 'mst_pangkat_golongan.golongan', 'mst_karyawan.kd_panggol')
+                    ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
+                    ->select(
+                        'mst_karyawan.nip',
+                        'mst_karyawan.nik',
+                        'mst_karyawan.nama_karyawan',
+                        'mst_karyawan.kd_bagian',
+                        'mst_karyawan.kd_jabatan',
+                        'mst_karyawan.kd_entitas',
+                        'mst_karyawan.tanggal_penonaktifan',
+                        'mst_karyawan.status_jabatan',
+                        'mst_karyawan.ket_jabatan',
+                        'mst_karyawan.kd_entitas',
+                        'mst_karyawan.jk',
+                        'mst_karyawan.tanggal_pengangkat',
+                        'mst_karyawan.tgl_mulai',
+                        'mst_karyawan.no_rekening',
+                        'mst_jabatan.nama_jabatan',
+                        'mst_bagian.nama_bagian'
+                    )
+                    ->orderBy('nip', 'desc')
+                    ->first();
+
+                $karyawanController = new KaryawanController;
+                $pincab->entitas = $karyawanController->addEntity($dataPincab->kd_entitas);
+                $prefix = match ($dataPincab->status_jabatan) {
+                    'Penjabat' => 'Pj. ',
+                    'Penjabat Sementara' => 'Pjs. ',
+                    default => '',
+                };
+                
+                $jabatan = '';
+                if ($dataPincab->nama_jabatan) {
+                    $jabatan = $dataPincab->nama_jabatan;
+                } else {
+                    $jabatan = 'undifined';
+                }
+                
+                $ket = $dataPincab->ket_jabatan ? "({$dataPincab->ket_jabatan})" : '';
+                
+                if (isset($pincab->entitas->subDiv)) {
+                    $entitas = $pincab->entitas->subDiv->nama_subdivisi;
+                } elseif (isset($pincab->entitas->div)) {
+                    $entitas = $pincab->entitas->div->nama_divisi;
+                } else {
+                    $entitas = '';
+                }
+                
+                if ($jabatan == 'Pemimpin Sub Divisi') {
+                    $jabatan = 'PSD';
+                } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
+                    $jabatan = 'PBO';
+                } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
+                    $jabatan = 'PBP';
+                } else {
+                    $jabatan = $dataPincab?->nama_jabatan ? $dataPincab?->nama_jabatan : 'undifined';
+                }
+    
+                $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $dataPincab?->nama_bagian . ' ' . $ket;
+            }
+
+            $ttdKaryawan->kantor_cabang = $kantor;
+            $ttdKaryawan->nama_karyawan = $dataPincab->nama_karyawan;
+            $ttdKaryawan->jabatan = $display_jabatan;
+
             $tj_khusus = 0;
             if ($data->tj_ti > 0) {
                 $tj_khusus += $data->tj_ti;
@@ -402,6 +490,7 @@ class SlipGajiRepository
             $data_list->total_gaji = (int) $data->total_gaji;
             $data->data_list = $data_list;
             $data->terbilang = strtoupper($this->terbilang($total_diterima));
+            $data->ttd_karyawan = $ttdKaryawan;
         }
         return $data;
     }
