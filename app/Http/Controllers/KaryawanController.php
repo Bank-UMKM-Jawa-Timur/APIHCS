@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\KaryawanModel;
+use Carbon\Carbon;
 use Exception;
 use finfo;
 use Illuminate\Database\QueryException;
@@ -70,15 +71,28 @@ class KaryawanController extends Controller
                             'mst_karyawan.ket_jabatan',
                             'mst_karyawan.kd_entitas',
                             'mst_karyawan.jk',
+                            'mst_karyawan.tanggal_pengangkat',
+                            'mst_karyawan.tgl_mulai',
+                            'mst_karyawan.no_rekening',
                             'mst_jabatan.nama_jabatan',
                             'mst_bagian.nama_bagian'
                         )
                         ->first();
                         
                     $dataKaryawan = new stdClass;
+                    $mulaKerja = Carbon::create($karyawan->tanggal_pengangkat);
+                    $waktuSekarang = Carbon::now();
+                    $hitung = $waktuSekarang->diff($mulaKerja);
+                    $tahunKerja = (int) $hitung->format('%y'); 
+                    $bulanKerja = (int) $hitung->format('%m'); 
+                    $masaKerja = $hitung->format('%y Tahun, %m Bulan');
+                    
                     $dataKaryawan->nip = $karyawan->nip;
                     $dataKaryawan->nama_karyawan = $karyawan->nama_karyawan;
                     $dataKaryawan->jenis_kelamin = $karyawan->jk;
+                    $dataKaryawan->tanggal_bergabung = Carbon::parse($karyawan->tanggal_pengangkat)->translatedFormat('d F Y');
+                    $dataKaryawan->lama_kerja = $masaKerja;
+                    $dataKaryawan->no_rekening = $karyawan->no_rekening;
                     $dataKaryawan->entitas = $this->getEntity($karyawan->kd_entitas);
                     $prefix = match ($karyawan->status_jabatan) {
                         'Penjabat' => 'Pj. ',
