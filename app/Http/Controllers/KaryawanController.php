@@ -337,6 +337,9 @@ class KaryawanController extends Controller
                         
                     $dataKaryawan = new stdClass;
                     $returnData = new stdClass;
+                    $biodata = new stdClass;
+                    $norek = new stdClass;
+                    $dataJabatan = new stdClass;
                     $mulaKerja = Carbon::create($karyawan->tanggal_pengangkat);
                     $waktuSekarang = Carbon::now();
                     $hitung = $waktuSekarang->diff($mulaKerja);
@@ -348,37 +351,37 @@ class KaryawanController extends Controller
                     $umur = $hitung->format('%y Tahun | %m Bulan | %d Hari');
 
                     // Biodata diri
-                    $returnData->nip = $karyawan->nip;
-                    $returnData->nik = $karyawan->nik;
-                    $returnData->nama_karyawan = $karyawan->nama_karyawan;
-                    $returnData->ttl = $karyawan->tmp_lahir . ', ' . date('d F Y', strtotime($karyawan->tgl_lahir));
-                    $returnData->umur = $umur;
-                    $returnData->agama = $karyawan->agama;
-                    $returnData->status_pernikahan = $karyawan->status_ptkp;
-                    $returnData->kewarganegaraan = $karyawan->kewarganegaraan;
-                    $returnData->alamat_ktp = $karyawan->alamat_ktp;
-                    $returnData->alamat_sek = $karyawan->alamat_sek;
-                    $returnData->jenis_kelamin = $karyawan->jk;
+                    $biodata->nip = $karyawan->nip;
+                    $biodata->nik = $karyawan->nik;
+                    $biodata->nama_karyawan = $karyawan->nama_karyawan;
+                    $biodata->ttl = $karyawan->tmp_lahir . ', ' . date('d F Y', strtotime($karyawan->tgl_lahir));
+                    $biodata->umur = $umur;
+                    $biodata->agama = $karyawan->agama;
+                    $biodata->status_pernikahan = $karyawan->status_ptkp;
+                    $biodata->kewarganegaraan = $karyawan->kewarganegaraan;
+                    $biodata->alamat_ktp = $karyawan->alamat_ktp;
+                    $biodata->alamat_sek = $karyawan->alamat_sek;
+                    $biodata->jenis_kelamin = $karyawan->jk;
                     // End biodata diri
 
                     // Norek & NPWP
-                    $returnData->no_rek = $karyawan->no_rekening;
-                    $returnData->npwp = $karyawan->npwp;
+                    $norek->no_rek = $karyawan->no_rekening;
+                    $norek->npwp = $karyawan->npwp;
                     // End Norek & NPWP
 
                     // Data Jabatan
-                    $returnData->tanggal_bergabung = Carbon::parse($karyawan->tanggal_pengangkat)->translatedFormat('d F Y');
-                    $returnData->lama_kerja = $masaKerja;
-                    $returnData->pangkat = $karyawan->pangkat;
-                    $returnData->golongan = $karyawan->golongan;
-                    $returnData->status_karyawan = $karyawan->status_karyawan;
-                    $returnData->status_jabatan = $karyawan->status_jabatan;
-                    $returnData->keterangan_jabatan = $karyawan->ket_jabatan;
-                    $returnData->tanggal_mulai = date('d F Y', strtotime($karyawan->tgl_mulai));
-                    $returnData->pendidikan_terakhir = $karyawan->pendidikan;
-                    $returnData->pendidikan_major = $karyawan->pendidikan_major;
-                    $returnData->sk_pengangkatan = $karyawan->skangkat;
-                    $returnData->tanggal_pengangkatan = $karyawan->tanggal_pengangkat;
+                    $dataJabatan->tanggal_bergabung = Carbon::parse($karyawan->tanggal_pengangkat)->translatedFormat('d F Y');
+                    $dataJabatan->lama_kerja = $masaKerja;
+                    $dataJabatan->pangkat = $karyawan->pangkat;
+                    $dataJabatan->golongan = $karyawan->golongan;
+                    $dataJabatan->status_karyawan = $karyawan->status_karyawan;
+                    $dataJabatan->status_jabatan = $karyawan->status_jabatan;
+                    $dataJabatan->keterangan_jabatan = $karyawan->ket_jabatan;
+                    $dataJabatan->tanggal_mulai = date('d F Y', strtotime($karyawan->tgl_mulai));
+                    $dataJabatan->pendidikan_terakhir = $karyawan->pendidikan;
+                    $dataJabatan->pendidikan_major = $karyawan->pendidikan_major;
+                    $dataJabatan->sk_pengangkatan = $karyawan->skangkat;
+                    $dataJabatan->tanggal_pengangkatan = $karyawan->tanggal_pengangkat;
                     $dataKaryawan->entitas = $this->getEntity($karyawan->kd_entitas);
                     $prefix = match ($karyawan->status_jabatan) {
                         'Penjabat' => 'Pj. ',
@@ -416,8 +419,11 @@ class KaryawanController extends Controller
                     }
         
                     $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $karyawan?->nama_bagian . ' ' . $ket . ($karyawan->nama_cabang != null ? ' Cabang ' . $karyawan->nama_cabang : ' (Pusat)');
-                    $returnData->display_jabatan = $display_jabatan;
+                    $dataJabatan->display_jabatan = $display_jabatan;
 
+                    $returnData->biodata = $biodata;
+                    $returnData->norek_npwp = $norek;
+                    $returnData->data_jabatan = $dataJabatan;
                     $data = $returnData;
             }
         } catch(Exception $e) {
