@@ -75,7 +75,8 @@ class KaryawanController extends Controller
                             'mst_karyawan.tgl_mulai',
                             'mst_karyawan.no_rekening',
                             'mst_jabatan.nama_jabatan',
-                            'mst_bagian.nama_bagian'
+                            'mst_bagian.nama_bagian',
+                            'mst_cabang.nama_cabang'
                         )
                         ->first();
                         
@@ -110,7 +111,9 @@ class KaryawanController extends Controller
                     
                     $ket = $karyawan->ket_jabatan ? "({$karyawan->ket_jabatan})" : '';
                     
-                    if (isset($dataKaryawan->entitas->subDiv)) {
+                    if ($karyawan->nama_bagian != null && $dataKaryawan->entitas->type == 1){
+                        $entitas = '';
+                    } else if (isset($dataKaryawan->entitas->subDiv)) {
                         $entitas = $dataKaryawan->entitas->subDiv->nama_subdivisi;
                     } elseif (isset($dataKaryawan->entitas->div)) {
                         $entitas = $dataKaryawan->entitas->div->nama_divisi;
@@ -128,7 +131,7 @@ class KaryawanController extends Controller
                         $jabatan = $karyawan?->nama_jabatan ? $karyawan?->nama_jabatan : 'undifined';
                     }
         
-                    $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $karyawan?->nama_bagian . ' ' . $ket;
+                    $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $karyawan?->nama_bagian . ' ' . $ket . ($karyawan->nama_cabang != null ? ' Cabang ' . $karyawan->nama_cabang : '');
                     $returnData->display_jabatan = $display_jabatan;
                     // End get data karyawan
 

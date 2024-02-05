@@ -77,6 +77,7 @@ class SlipGajiRepository
                     $tj_khusus += $value->tj_fungsional;
                 }
                 $value->tj_khusus = $tj_khusus;
+                $value->total_gaji += $tj_khusus;
                 $batch = DB::table('batch_gaji_per_bulan')->find($value->batch_id);
                 if ($batch) {
                     $hitungan_penambah = DB::table('pemotong_pajak_tambahan')
@@ -360,6 +361,7 @@ class SlipGajiRepository
                 $tj_khusus += $data->tj_fungsional;
             }
             $data->tj_khusus = $tj_khusus;
+            $data->total_gaji += $tj_khusus;
             $batch = DB::table('batch_gaji_per_bulan')->find($data->batch_id);
             if ($batch) {
                 $hitungan_penambah = DB::table('pemotong_pajak_tambahan')
