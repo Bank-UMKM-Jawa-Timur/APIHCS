@@ -264,6 +264,42 @@ class KaryawanController extends Controller
         ];
     }
 
+    public function changePassword(Request $request){
+        $status = 0;
+        $message = '';
+        $responseCode = Response::HTTP_UNAUTHORIZED;
+        $data = null;
+
+        DB::beginTransaction();
+        try{
+            DB::table('mst_karyawan')
+                ->where('nip', $request->get('nip'))
+                ->update([
+                    'password' => Hash::make($request->get('password'))
+                ]);
+            DB::commit();
+
+            $status = 1;
+            $message = 'Berhasil merubah password.';
+            $responseCode = Response::HTTP_OK;
+        } catch(Exception $e) {
+            DB::rollBack();
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } catch(QueryException $e) {
+            DB::rollBack();
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } finally {
+            $response = [
+                'status' => $status,
+                'message' => $message
+            ];
+
+            return response()->json($response, $responseCode);
+        }
+    }
+
     public function addEntity($karyawan)
     {
         return $this->getEntity($karyawan);

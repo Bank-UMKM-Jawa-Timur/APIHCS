@@ -24,3 +24,5 @@ $router->group(['prefix' => 'slip-gaji'], function () use ($router) {
     $router->get('/list', 'SlipGajiController@list');
     $router->get('/detail/{id}', 'SlipGajiController@detail');
 });
+
+$router->post('/change-password', 'KaryawanController@changePassword');
