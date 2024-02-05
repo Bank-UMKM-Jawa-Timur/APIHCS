@@ -300,6 +300,143 @@ class KaryawanController extends Controller
         }
     }
 
+    public function biodata($id) {
+        $status = 0;
+        $message = '';
+        $responseCode = Response::HTTP_UNAUTHORIZED;
+        $data = null;
+        
+        try {
+            $responseCode = Response::HTTP_OK;
+            $status = 1;
+            $message = 'Berhasil menampilkan biodata.';
+            $karyawan = DB::table('mst_karyawan')
+                ->where('nip', $id)
+                ->first();
+            if($karyawan == null){
+                $status = 0;
+                $message = 'Karyawan tidak ditemukan.';
+            } else {
+                $karyawan = DB::table('mst_karyawan')
+                        ->where('nip', $id)
+                        ->leftJoin('mst_cabang', 'mst_cabang.kd_cabang', 'mst_karyawan.kd_entitas')
+                        ->leftJoin('mst_bagian', 'mst_bagian.kd_bagian', 'mst_karyawan.kd_bagian')
+                        ->leftJoin('mst_pangkat_golongan', 'mst_pangkat_golongan.golongan', 'mst_karyawan.kd_panggol')
+                        ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
+                        ->leftJoin('mst_agama', 'mst_agama.kd_agama', 'mst_karyawan.kd_agama')
+                        ->select(
+                            'mst_karyawan.*',
+                            'mst_jabatan.nama_jabatan',
+                            'mst_bagian.nama_bagian',
+                            'mst_cabang.nama_cabang',
+                            'mst_pangkat_golongan.pangkat',
+                            'mst_pangkat_golongan.golongan',
+                            'mst_agama.agama',
+                        )
+                        ->first();
+                        
+                    $dataKaryawan = new stdClass;
+                    $returnData = new stdClass;
+                    $mulaKerja = Carbon::create($karyawan->tanggal_pengangkat);
+                    $waktuSekarang = Carbon::now();
+                    $hitung = $waktuSekarang->diff($mulaKerja);
+                    $tahunKerja = (int) $hitung->format('%y'); 
+                    $bulanKerja = (int) $hitung->format('%m'); 
+                    $masaKerja = $hitung->format('%y Tahun, %m Bulan');
+                    $tanggalLahir = Carbon::create($karyawan->tgl_lahir);
+                    $hitung = $waktuSekarang->diff($tanggalLahir);
+                    $umur = $hitung->format('%y Tahun | %m Bulan | %d Hari');
+
+                    // Biodata diri
+                    $returnData->nip = $karyawan->nip;
+                    $returnData->nik = $karyawan->nik;
+                    $returnData->nama_karyawan = $karyawan->nama_karyawan;
+                    $returnData->ttl = $karyawan->tmp_lahir . ', ' . date('d F Y', strtotime($karyawan->tgl_lahir));
+                    $returnData->umur = $umur;
+                    $returnData->agama = $karyawan->agama;
+                    $returnData->status_pernikahan = $karyawan->status_ptkp;
+                    $returnData->kewarganegaraan = $karyawan->kewarganegaraan;
+                    $returnData->alamat_ktp = $karyawan->alamat_ktp;
+                    $returnData->alamat_sek = $karyawan->alamat_sek;
+                    $returnData->jenis_kelamin = $karyawan->jk;
+                    // End biodata diri
+
+                    // Norek & NPWP
+                    $returnData->no_rek = $karyawan->no_rekening;
+                    $returnData->npwp = $karyawan->npwp;
+                    // End Norek & NPWP
+
+                    // Data Jabatan
+                    $returnData->tanggal_bergabung = Carbon::parse($karyawan->tanggal_pengangkat)->translatedFormat('d F Y');
+                    $returnData->lama_kerja = $masaKerja;
+                    $returnData->pangkat = $karyawan->pangkat;
+                    $returnData->golongan = $karyawan->golongan;
+                    $returnData->status_karyawan = $karyawan->status_karyawan;
+                    $returnData->status_jabatan = $karyawan->status_jabatan;
+                    $returnData->keterangan_jabatan = $karyawan->ket_jabatan;
+                    $returnData->tanggal_mulai = date('d F Y', strtotime($karyawan->tgl_mulai));
+                    $returnData->pendidikan_terakhir = $karyawan->pendidikan;
+                    $returnData->pendidikan_major = $karyawan->pendidikan_major;
+                    $returnData->sk_pengangkatan = $karyawan->skangkat;
+                    $returnData->tanggal_pengangkatan = $karyawan->tanggal_pengangkat;
+                    $dataKaryawan->entitas = $this->getEntity($karyawan->kd_entitas);
+                    $prefix = match ($karyawan->status_jabatan) {
+                        'Penjabat' => 'Pj. ',
+                        'Penjabat Sementara' => 'Pjs. ',
+                        default => '',
+                    };
+                    
+                    $jabatan = '';
+                    if ($karyawan->nama_jabatan) {
+                        $jabatan = $karyawan->nama_jabatan;
+                    } else {
+                        $jabatan = 'undifined';
+                    }
+                    
+                    $ket = $karyawan->ket_jabatan ? "({$karyawan->ket_jabatan})" : '';
+                    
+                    if ($karyawan->nama_bagian != null && $dataKaryawan->entitas->type == 1){
+                        $entitas = '';
+                    } else if (isset($dataKaryawan->entitas->subDiv)) {
+                        $entitas = $dataKaryawan->entitas->subDiv->nama_subdivisi;
+                    } elseif (isset($dataKaryawan->entitas->div)) {
+                        $entitas = $dataKaryawan->entitas->div->nama_divisi;
+                    } else {
+                        $entitas = '';
+                    }
+                    
+                    if ($jabatan == 'Pemimpin Sub Divisi') {
+                        $jabatan = 'PSD';
+                    } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
+                        $jabatan = 'PBO';
+                    } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
+                        $jabatan = 'PBP';
+                    } else {
+                        $jabatan = $karyawan?->nama_jabatan ? $karyawan?->nama_jabatan : 'undifined';
+                    }
+        
+                    $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $karyawan?->nama_bagian . ' ' . $ket . ($karyawan->nama_cabang != null ? ' Cabang ' . $karyawan->nama_cabang : ' (Pusat)');
+                    $returnData->display_jabatan = $display_jabatan;
+
+                    $data = $returnData;
+            }
+        } catch(Exception $e) {
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } catch(QueryException $e) {
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } finally {
+            $response = [
+                'status' => $status,
+                'message' => $message,
+                'data' => $data
+            ];
+
+            return response()->json($response, $responseCode);
+        }
+    }
+
     public function addEntity($karyawan)
     {
         return $this->getEntity($karyawan);
