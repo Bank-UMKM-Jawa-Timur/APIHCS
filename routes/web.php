@@ -32,3 +32,8 @@ $router->group(['prefix' => 'karyawan'], function () use ($router){
     $router->get('/', 'KaryawanController@listKaryawan');
     $router->get('/{id}', 'KaryawanController@detailKaryawan');
 });
+
+$router->get('/cabang', 'CabangController@showCabang');
+$router->get('/divisi', 'DivisiController@showDivisi');
+$router->get('/sub-divisi/{id}', 'SubdivisiController@showSubdivisi');
+$router->get('/bagian/{id}', 'BagianController@showBagian');
