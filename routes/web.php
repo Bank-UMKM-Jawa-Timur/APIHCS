@@ -28,6 +28,7 @@ $router->group(['prefix' => 'slip-gaji'], function () use ($router) {
 $router->post('/change-password', 'KaryawanController@changePassword');
 $router->get('/biodata/{id}', 'KaryawanController@biodata');
 
-$router->group(['prefix' => 'lists-karyawan'], function () use ($router){
+$router->group(['prefix' => 'karyawan'], function () use ($router){
     $router->get('/', 'KaryawanController@listKaryawan');
+    $router->get('/{id}', 'KaryawanController@detailKaryawan');
 });

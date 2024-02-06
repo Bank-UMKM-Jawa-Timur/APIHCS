@@ -479,6 +479,38 @@ class KaryawanController extends Controller
         }
     }
 
+    public function detailKaryawan($id){
+        $status = 0;
+        $message = '';
+        $responseCode = Response::HTTP_UNAUTHORIZED;
+        $data = null;
+
+        try {
+            $message = 'Berhasil menampilkan detail karyawan.';
+            $responseCode = Response::HTTP_OK;
+            $status = 1;
+            
+            $repo = new KaryawanRepository();
+            $data = $repo->getDetailKaryawan($id);
+        } catch(Exception $e) {
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } catch(QueryException $e) {
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } finally {
+            $response = [
+                'status' => $status,
+                'message' => $message,
+                'data' => $data
+            ];
+
+            return response()->json($response, $responseCode);
+        }
+    }
+
     public function addEntity($karyawan)
     {
         return $this->getEntity($karyawan);
