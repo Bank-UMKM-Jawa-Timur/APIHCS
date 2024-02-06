@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\KaryawanModel;
+use App\Repository\KaryawanRepository;
 use Carbon\Carbon;
 use Exception;
 use finfo;
@@ -430,6 +431,41 @@ class KaryawanController extends Controller
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
         } catch(QueryException $e) {
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } finally {
+            $response = [
+                'status' => $status,
+                'message' => $message,
+                'data' => $data
+            ];
+
+            return response()->json($response, $responseCode);
+        }
+    }
+
+    public function listKaryawan(Request $request){
+        $status = 0;
+        $message = '';
+        $responseCode = Response::HTTP_UNAUTHORIZED;
+        $data = null;
+
+        try {
+            $message = 'Berhasil menampilkan list karyawan.';
+            $responseCode = Response::HTTP_OK;
+            $status = 1;
+            $page = $request->get('page') ?? 1;
+            $search = $request->get('search') ?? null;
+            $limit = $request->get('limit') ?? 10;
+
+            $repo = new KaryawanRepository();
+            $data = $repo->getAllKaryawan($search, $limit, $page);
+        } catch(Exception $e) {
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } catch(QueryException $e) {
+            $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
         } finally {
