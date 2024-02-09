@@ -267,4 +267,270 @@ class KaryawanRepository
 
         return $data;
     }
+
+    public function getDataPensiun($request = []){
+        $kategori = strtolower($request['kategori']);
+
+        if($kategori == 'divisi') {
+            $subDivs = DB::table('mst_sub_divisi')->where('kd_divisi', $request['divisi'])
+                ->pluck('kd_subdiv');
+
+            $bagians = DB::table('mst_bagian')->whereIn('kd_entitas', $subDivs)
+                ->orWhere('kd_entitas', $request['divisi'])
+                ->pluck('kd_bagian');
+
+                $data = DB::table('mst_karyawan')
+                ->select(
+                    'mst_karyawan.nip',
+                    'mst_karyawan.nik',
+                    'mst_karyawan.nama_karyawan',
+                    'mst_karyawan.kd_bagian',
+                    'mst_karyawan.kd_jabatan',
+                    'mst_karyawan.kd_entitas',
+                    'mst_karyawan.tanggal_penonaktifan',
+                    'mst_karyawan.status_jabatan',
+                    'mst_karyawan.ket_jabatan',
+                    'mst_karyawan.kd_entitas',
+                    'mst_karyawan.jk',
+                    'mst_karyawan.tanggal_pengangkat',
+                    'mst_karyawan.tgl_mulai',
+                    'mst_karyawan.no_rekening',
+                    'mst_jabatan.nama_jabatan',
+                    'mst_bagian.nama_bagian',
+                    'mst_cabang.nama_cabang',
+                    'mst_karyawan.tgl_lahir'
+                )->leftJoin('mst_cabang', 'kd_cabang', 'mst_karyawan.kd_entitas')
+                ->leftJoin('mst_bagian', 'mst_karyawan.kd_bagian', 'mst_bagian.kd_bagian')
+                ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
+                ->whereNull('tanggal_penonaktifan')
+                ->where('kd_entitas', $request['divisi'])
+                ->orWhereIn('kd_entitas', $subDivs)
+                ->orWhereIn('kd_bagian', $bagians)
+                ->orderByRaw($this->orderRaw)
+                ->orderBy('kd_cabang', 'asc')
+                ->orderBy('kd_entitas', 'asc')
+                ->paginate(25);
+        } else if($kategori == 'sub divisi') {
+            $entitas = $request['subDivisi'] ?? $request['divisi'];
+
+            $bagian = DB::table('mst_bagian')->where('kd_entitas', $entitas)
+                ->pluck('kd_bagian');
+                $data = DB::table('mst_karyawan')
+                ->select(
+                    'mst_karyawan.nip',
+                    'mst_karyawan.nik',
+                    'mst_karyawan.nama_karyawan',
+                    'mst_karyawan.kd_bagian',
+                    'mst_karyawan.kd_jabatan',
+                    'mst_karyawan.kd_entitas',
+                    'mst_karyawan.tanggal_penonaktifan',
+                    'mst_karyawan.status_jabatan',
+                    'mst_karyawan.ket_jabatan',
+                    'mst_karyawan.kd_entitas',
+                    'mst_karyawan.jk',
+                    'mst_karyawan.tanggal_pengangkat',
+                    'mst_karyawan.tgl_mulai',
+                    'mst_karyawan.no_rekening',
+                    'mst_jabatan.nama_jabatan',
+                    'mst_bagian.nama_bagian',
+                    'mst_cabang.nama_cabang',
+                    'mst_karyawan.tgl_lahir'
+                )->leftJoin('mst_cabang', 'kd_cabang', 'mst_karyawan.kd_entitas')
+                ->leftJoin('mst_bagian', 'mst_karyawan.kd_bagian', 'mst_bagian.kd_bagian')
+                ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
+                ->whereNull('tanggal_penonaktifan')
+                ->where('kd_entitas', $entitas)
+                ->orWhereIn('kd_bagian', $bagian)
+                ->orderByRaw($this->orderRaw)
+                ->orderBy('kd_cabang', 'asc')
+                ->orderBy('kd_entitas', 'asc')
+                ->paginate(25);
+        } else if($kategori == 'bagian') {
+            $data = DB::table('mst_karyawan')
+                ->select(
+                    'mst_karyawan.nip',
+                    'mst_karyawan.nik',
+                    'mst_karyawan.nama_karyawan',
+                    'mst_karyawan.kd_bagian',
+                    'mst_karyawan.kd_jabatan',
+                    'mst_karyawan.kd_entitas',
+                    'mst_karyawan.tanggal_penonaktifan',
+                    'mst_karyawan.status_jabatan',
+                    'mst_karyawan.ket_jabatan',
+                    'mst_karyawan.kd_entitas',
+                    'mst_karyawan.jk',
+                    'mst_karyawan.tanggal_pengangkat',
+                    'mst_karyawan.tgl_mulai',
+                    'mst_karyawan.no_rekening',
+                    'mst_jabatan.nama_jabatan',
+                    'mst_bagian.nama_bagian',
+                    'mst_cabang.nama_cabang',
+                    'mst_karyawan.tgl_lahir'
+                )->leftJoin('mst_cabang', 'kd_cabang', 'mst_karyawan.kd_entitas')
+                ->leftJoin('mst_bagian', 'mst_karyawan.kd_bagian', 'mst_bagian.kd_bagian')
+                ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
+                ->whereNull('tanggal_penonaktifan')
+                ->where('kd_bagian', $request['bagian'])
+                ->whereNotNull('kd_bagian')
+                ->orderByRaw($this->orderRaw)
+                ->orderBy('kd_cabang', 'asc')
+                ->orderBy('kd_entitas', 'asc')
+                ->paginate(25);
+        } else if($kategori == 'kantor') {
+            if($request['kantor'] == 'Cabang'){
+                $data = DB::table('mst_karyawan')
+                    ->select(
+                        'mst_karyawan.nip',
+                        'mst_karyawan.nik',
+                        'mst_karyawan.nama_karyawan',
+                        'mst_karyawan.kd_bagian',
+                        'mst_karyawan.kd_jabatan',
+                        'mst_karyawan.kd_entitas',
+                        'mst_karyawan.tanggal_penonaktifan',
+                        'mst_karyawan.status_jabatan',
+                        'mst_karyawan.ket_jabatan',
+                        'mst_karyawan.kd_entitas',
+                        'mst_karyawan.jk',
+                        'mst_karyawan.tanggal_pengangkat',
+                        'mst_karyawan.tgl_mulai',
+                        'mst_karyawan.no_rekening',
+                        'mst_jabatan.nama_jabatan',
+                        'mst_bagian.nama_bagian',
+                        'mst_cabang.nama_cabang',
+                        'mst_karyawan.tgl_lahir'
+                    )->leftJoin('mst_cabang', 'kd_cabang', 'mst_karyawan.kd_entitas')
+                    ->leftJoin('mst_bagian', 'mst_karyawan.kd_bagian', 'mst_bagian.kd_bagian')
+                    ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
+                    ->whereNull('tanggal_penonaktifan')->where('kd_entitas', $request['kd_cabang'])
+                    ->orderByRaw($this->orderRaw)
+                    ->orderBy('kd_cabang', 'asc')
+                    ->orderBy('kd_entitas', 'asc')
+                    ->paginate(25);
+            }
+            else {
+                $kd_cabang = DB::table('mst_cabang')
+                    ->select('kd_cabang')
+                    ->pluck('kd_cabang')
+                    ->toArray();
+                $data = DB::table('mst_karyawan')
+                    ->select(
+                        'mst_karyawan.nip',
+                        'mst_karyawan.nik',
+                        'mst_karyawan.nama_karyawan',
+                        'mst_karyawan.kd_bagian',
+                        'mst_karyawan.kd_jabatan',
+                        'mst_karyawan.kd_entitas',
+                        'mst_karyawan.tanggal_penonaktifan',
+                        'mst_karyawan.status_jabatan',
+                        'mst_karyawan.ket_jabatan',
+                        'mst_karyawan.kd_entitas',
+                        'mst_karyawan.jk',
+                        'mst_karyawan.tanggal_pengangkat',
+                        'mst_karyawan.tgl_mulai',
+                        'mst_karyawan.no_rekening',
+                        'mst_jabatan.nama_jabatan',
+                        'mst_bagian.nama_bagian',
+                        'mst_cabang.nama_cabang',
+                        'mst_karyawan.tgl_lahir'
+                    )->leftJoin('mst_cabang', 'kd_cabang', 'mst_karyawan.kd_entitas')
+                    ->leftJoin('mst_bagian', 'mst_karyawan.kd_bagian', 'mst_bagian.kd_bagian')
+                    ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
+                    ->whereNull('tanggal_penonaktifan')
+                    ->whereNotIn('mst_karyawan.kd_entitas', $kd_cabang)
+                    ->orWhere('mst_karyawan.kd_entitas', 0)
+                    ->orWhereNull('mst_karyawan.kd_entitas')
+                    ->orderByRaw($this->orderRaw)
+                    ->orderBy('kd_cabang', 'asc')
+                    ->orderBy('kd_entitas', 'asc')
+                    ->paginate(25);
+            }
+        } else {
+            $data = DB::table('mst_karyawan')
+                ->select(
+                    'mst_karyawan.nip',
+                    'mst_karyawan.nik',
+                    'mst_karyawan.nama_karyawan',
+                    'mst_karyawan.kd_bagian',
+                    'mst_karyawan.kd_jabatan',
+                    'mst_karyawan.kd_entitas',
+                    'mst_karyawan.tanggal_penonaktifan',
+                    'mst_karyawan.status_jabatan',
+                    'mst_karyawan.ket_jabatan',
+                    'mst_karyawan.kd_entitas',
+                    'mst_karyawan.jk',
+                    'mst_karyawan.tanggal_pengangkat',
+                    'mst_karyawan.tgl_mulai',
+                    'mst_karyawan.no_rekening',
+                    'mst_jabatan.nama_jabatan',
+                    'mst_bagian.nama_bagian',
+                    'mst_cabang.nama_cabang',
+                    'mst_karyawan.tgl_lahir'
+                )->leftJoin('mst_cabang', 'kd_cabang', 'mst_karyawan.kd_entitas')
+                ->leftJoin('mst_bagian', 'mst_karyawan.kd_bagian', 'mst_bagian.kd_bagian')
+                ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
+                ->whereNull('tanggal_penonaktifan')
+                ->orderByRaw($this->orderRaw)
+                ->orderBy('kd_cabang', 'asc')
+                ->orderBy('kd_entitas', 'asc')
+                ->paginate(25);
+        }
+        
+        foreach($data as $value) {
+            $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
+            $prefix = match ($value->status_jabatan) {
+                'Penjabat' => 'Pj. ',
+                'Penjabat Sementara' => 'Pjs. ',
+                default => '',
+            };
+            
+            $jabatan = '';
+            if ($value->nama_jabatan) {
+                $jabatan = $value->nama_jabatan;
+            } else {
+                $jabatan = 'undifined';
+            }
+            
+            $ket = $value->ket_jabatan ? "({$value->ket_jabatan})" : '';
+            
+            if (isset($value->entitas->subDiv)) {
+                $entitas = $value->entitas->subDiv->nama_subdivisi;
+            } elseif (isset($value->entitas->div)) {
+                $entitas = $value->entitas->div->nama_divisi;
+            } else {
+                $entitas = '';
+            }
+            
+            if ($jabatan == 'Pemimpin Sub Divisi') {
+                $jabatan = 'PSD';
+            } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
+                $jabatan = 'PBO';
+            } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
+                $jabatan = 'PBP';
+            } else {
+                $jabatan = $value->nama_jabatan ? $value->nama_jabatan : 'undifined';
+            }
+            unset($value->entitas);
+            $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $value?->nama_bagian . ' ' . $ket;
+            $value->display_jabatan = $display_jabatan;
+            
+            $umur = Carbon::create($value->tgl_lahir);
+            $waktuSekarang = Carbon::now();
+            $hitung = $waktuSekarang->diff($umur);
+            $waktuSekarang = Carbon::now();
+            $tglLahir = $value->tgl_lahir;
+            $pensiun = Carbon::create(date('Y-m-d', strtotime($tglLahir . ' + 56 years')));
+            $hitungPensiun = $pensiun->diff($waktuSekarang);
+            $tampilPensiun = null;
+
+            if($waktuSekarang->diffInYears($umur) >= 54){
+                $tampilPensiun = 'Persiapan pensiun dalam ' . $hitungPensiun->format('%y Tahun, %m Bulan, %d Hari');
+            } else if($waktuSekarang->diffInYears($umur) >= 56) {
+                $tampilPensiun = 'Telah melebihi batas pensiun.';
+            }
+            $value->pensiun = $tampilPensiun;
+
+            $value->kantor = $value->nama_cabang != null ? $value->nama_cabang : 'Pusat';
+        }
+        return $data;
+    }
 }

@@ -33,6 +33,11 @@ $router->group(['prefix' => 'karyawan'], function () use ($router){
     $router->get('/{id}', 'KaryawanController@detailKaryawan');
 });
 
+$router->group(['prefix' => 'reminder-pensiun'], function () use ($router){
+    $router->get('/', 'KaryawanController@listDataPensiun');
+    $router->get('/{id}', 'KaryawanController@detailDataPensiun');
+});
+
 $router->get('/cabang', 'CabangController@showCabang');
 $router->get('/divisi', 'DivisiController@showDivisi');
 $router->get('/sub-divisi/{id}', 'SubdivisiController@showSubdivisi');
