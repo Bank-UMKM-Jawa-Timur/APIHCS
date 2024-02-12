@@ -36,8 +36,11 @@ class KaryawanController extends Controller
             $karyawan = DB::table('mst_karyawan')
                 ->where('nip', $request->get('nip'))
                 ->first();
-            if($karyawan != null){
-                if(!Hash::check($request->get('password'), $karyawan->password)){
+            $user = DB::table('users')
+                ->where('email', $request->get('nip'))
+                ->first();
+            if($karyawan != null || $user != null){
+                if(($karyawan != null && !Hash::check($request->get('password'), $karyawan->password)) || ($user && !Hash::check($request->get('password'), $user->password))){
                     $message = 'Password yang anda masukkan salah';
                 } else if(DB::table('personal_access_tokens')->where('tokenable_id', $request->get('nip'))->count() > 0) {
                     $message = 'Akun sedang digunakan di perangkat lain.';
@@ -54,86 +57,98 @@ class KaryawanController extends Controller
                     
                     $status = 1;
                     $message = 'Berhasil login';
-                    $karyawan = DB::table('mst_karyawan')
-                        ->where('nip', $request->get('nip'))
-                        ->leftJoin('mst_cabang', 'mst_cabang.kd_cabang', 'mst_karyawan.kd_entitas')
-                        ->leftJoin('mst_bagian', 'mst_bagian.kd_bagian', 'mst_karyawan.kd_bagian')
-                        ->leftJoin('mst_pangkat_golongan', 'mst_pangkat_golongan.golongan', 'mst_karyawan.kd_panggol')
-                        ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
-                        ->select(
-                            'mst_karyawan.nip',
-                            'mst_karyawan.nik',
-                            'mst_karyawan.nama_karyawan',
-                            'mst_karyawan.kd_bagian',
-                            'mst_karyawan.kd_jabatan',
-                            'mst_karyawan.kd_entitas',
-                            'mst_karyawan.tanggal_penonaktifan',
-                            'mst_karyawan.status_jabatan',
-                            'mst_karyawan.ket_jabatan',
-                            'mst_karyawan.kd_entitas',
-                            'mst_karyawan.jk',
-                            'mst_karyawan.tanggal_pengangkat',
-                            'mst_karyawan.tgl_mulai',
-                            'mst_karyawan.no_rekening',
-                            'mst_jabatan.nama_jabatan',
-                            'mst_bagian.nama_bagian',
-                            'mst_cabang.nama_cabang'
-                        )
-                        ->first();
-                        
+
                     $dataKaryawan = new stdClass;
                     $returnData = new stdClass;
-                    $mulaKerja = Carbon::create($karyawan->tanggal_pengangkat);
-                    $waktuSekarang = Carbon::now();
-                    $hitung = $waktuSekarang->diff($mulaKerja);
-                    $tahunKerja = (int) $hitung->format('%y'); 
-                    $bulanKerja = (int) $hitung->format('%m'); 
-                    $masaKerja = $hitung->format('%y Tahun, %m Bulan');
                     
-                    $returnData->nip = $karyawan->nip;
-                    $returnData->nama_karyawan = $karyawan->nama_karyawan;
-                    $returnData->jenis_kelamin = $karyawan->jk;
-                    $returnData->tanggal_bergabung = Carbon::parse($karyawan->tanggal_pengangkat)->translatedFormat('d F Y');
-                    $returnData->lama_kerja = $masaKerja;
-                    $returnData->no_rekening = $karyawan->no_rekening;
-                    $dataKaryawan->entitas = $this->getEntity($karyawan->kd_entitas);
-                    $prefix = match ($karyawan->status_jabatan) {
-                        'Penjabat' => 'Pj. ',
-                        'Penjabat Sementara' => 'Pjs. ',
-                        default => '',
-                    };
-                    
-                    $jabatan = '';
-                    if ($karyawan->nama_jabatan) {
-                        $jabatan = $karyawan->nama_jabatan;
+                    if($karyawan != null){
+                        $karyawan = DB::table('mst_karyawan')
+                            ->where('nip', $request->get('nip'))
+                            ->leftJoin('mst_cabang', 'mst_cabang.kd_cabang', 'mst_karyawan.kd_entitas')
+                            ->leftJoin('mst_bagian', 'mst_bagian.kd_bagian', 'mst_karyawan.kd_bagian')
+                            ->leftJoin('mst_pangkat_golongan', 'mst_pangkat_golongan.golongan', 'mst_karyawan.kd_panggol')
+                            ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
+                            ->select(
+                                'mst_karyawan.nip',
+                                'mst_karyawan.nik',
+                                'mst_karyawan.nama_karyawan',
+                                'mst_karyawan.kd_bagian',
+                                'mst_karyawan.kd_jabatan',
+                                'mst_karyawan.kd_entitas',
+                                'mst_karyawan.tanggal_penonaktifan',
+                                'mst_karyawan.status_jabatan',
+                                'mst_karyawan.ket_jabatan',
+                                'mst_karyawan.kd_entitas',
+                                'mst_karyawan.jk',
+                                'mst_karyawan.tanggal_pengangkat',
+                                'mst_karyawan.tgl_mulai',
+                                'mst_karyawan.no_rekening',
+                                'mst_jabatan.nama_jabatan',
+                                'mst_bagian.nama_bagian',
+                                'mst_cabang.nama_cabang'
+                            )
+                            ->first();
+
+                        $mulaKerja = Carbon::create($karyawan->tanggal_pengangkat);
+                        $waktuSekarang = Carbon::now();
+                        $hitung = $waktuSekarang->diff($mulaKerja);
+                        $tahunKerja = (int) $hitung->format('%y'); 
+                        $bulanKerja = (int) $hitung->format('%m'); 
+                        $masaKerja = $hitung->format('%y Tahun, %m Bulan');
+                        
+                        $returnData->nip = $karyawan->nip;
+                        $returnData->nama_karyawan = $karyawan->nama_karyawan;
+                        $returnData->jenis_kelamin = $karyawan->jk;
+                        $returnData->tanggal_bergabung = Carbon::parse($karyawan->tanggal_pengangkat)->translatedFormat('d F Y');
+                        $returnData->lama_kerja = $masaKerja;
+                        $returnData->no_rekening = $karyawan->no_rekening;
+                        $dataKaryawan->entitas = $this->getEntity($karyawan->kd_entitas);
+                        $prefix = match ($karyawan->status_jabatan) {
+                            'Penjabat' => 'Pj. ',
+                            'Penjabat Sementara' => 'Pjs. ',
+                            default => '',
+                        };
+                        
+                        $jabatan = '';
+                        if ($karyawan->nama_jabatan) {
+                            $jabatan = $karyawan->nama_jabatan;
+                        } else {
+                            $jabatan = 'undifined';
+                        }
+                        
+                        $ket = $karyawan->ket_jabatan ? "({$karyawan->ket_jabatan})" : '';
+                        
+                        if ($karyawan->nama_bagian != null && $dataKaryawan->entitas->type == 1){
+                            $entitas = '';
+                        } else if (isset($dataKaryawan->entitas->subDiv)) {
+                            $entitas = $dataKaryawan->entitas->subDiv->nama_subdivisi;
+                        } elseif (isset($dataKaryawan->entitas->div)) {
+                            $entitas = $dataKaryawan->entitas->div->nama_divisi;
+                        } else {
+                            $entitas = '';
+                        }
+                        
+                        if ($jabatan == 'Pemimpin Sub Divisi') {
+                            $jabatan = 'PSD';
+                        } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
+                            $jabatan = 'PBO';
+                        } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
+                            $jabatan = 'PBP';
+                        } else {
+                            $jabatan = $karyawan?->nama_jabatan ? $karyawan?->nama_jabatan : 'undifined';
+                        }
+            
+                        $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $karyawan?->nama_bagian . ' ' . $ket . ($karyawan->nama_cabang != null ? ' Cabang ' . $karyawan->nama_cabang : '');
+                        $returnData->display_jabatan = $display_jabatan;
                     } else {
-                        $jabatan = 'undifined';
+                        $returnData->nip = null;
+                        $returnData->nama_karyawan = $user->username;
+                        $returnData->jenis_kelamin = 'Laki-laki';
+                        $returnData->tanggal_bergabung = null;
+                        $returnData->lama_kerja = null;
+                        $returnData->no_rekening = null;
+                        $returnData->display_jabatan = 'SDM';
                     }
-                    
-                    $ket = $karyawan->ket_jabatan ? "({$karyawan->ket_jabatan})" : '';
-                    
-                    if ($karyawan->nama_bagian != null && $dataKaryawan->entitas->type == 1){
-                        $entitas = '';
-                    } else if (isset($dataKaryawan->entitas->subDiv)) {
-                        $entitas = $dataKaryawan->entitas->subDiv->nama_subdivisi;
-                    } elseif (isset($dataKaryawan->entitas->div)) {
-                        $entitas = $dataKaryawan->entitas->div->nama_divisi;
-                    } else {
-                        $entitas = '';
-                    }
-                    
-                    if ($jabatan == 'Pemimpin Sub Divisi') {
-                        $jabatan = 'PSD';
-                    } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
-                        $jabatan = 'PBO';
-                    } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
-                        $jabatan = 'PBP';
-                    } else {
-                        $jabatan = $karyawan?->nama_jabatan ? $karyawan?->nama_jabatan : 'undifined';
-                    }
-        
-                    $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $karyawan?->nama_bagian . ' ' . $ket . ($karyawan->nama_cabang != null ? ' Cabang ' . $karyawan->nama_cabang : '');
-                    $returnData->display_jabatan = $display_jabatan;
                     // End get data karyawan
 
                     DB::commit();
