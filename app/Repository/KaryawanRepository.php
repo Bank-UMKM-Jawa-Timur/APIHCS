@@ -533,4 +533,168 @@ class KaryawanRepository
         }
         return $data;
     }
+
+    public function listPengkinianData($limit = 10, $search = null) {
+        $orderRaw = "
+            CASE 
+            WHEN h.kd_jabatan='DIRUT' THEN 1
+            WHEN h.kd_jabatan='DIRUMK' THEN 2
+            WHEN h.kd_jabatan='DIRPEM' THEN 3
+            WHEN h.kd_jabatan='DIRHAN' THEN 4
+            WHEN h.kd_jabatan='KOMU' THEN 5
+            WHEN h.kd_jabatan='KOM' THEN 7
+            WHEN h.kd_jabatan='STAD' THEN 8
+            WHEN h.kd_jabatan='PIMDIV' THEN 9
+            WHEN h.kd_jabatan='PSD' THEN 10
+            WHEN h.kd_jabatan='PC' THEN 11
+            WHEN h.kd_jabatan='PBP' THEN 12
+            WHEN h.kd_jabatan='PBO' THEN 13
+            WHEN h.kd_jabatan='PEN' THEN 14
+            WHEN h.kd_jabatan='ST' THEN 15
+            WHEN h.kd_jabatan='NST' THEN 16
+            WHEN h.kd_jabatan='IKJP' THEN 17 END ASC
+        ";
+        $data = DB::table('history_pengkinian_data_karyawan AS h')
+            ->select(
+                'h.id',
+                'h.nip',
+                'h.nik',
+                'h.nama_karyawan',
+                'h.kd_entitas',
+                'h.kd_jabatan',
+                'h.kd_bagian',
+                'h.ket_jabatan',
+                'h.status_karyawan',
+                'j.nama_jabatan',
+                'h.status_jabatan',
+                'b.nama_bagian',
+                DB::raw("IF((SELECT m.kd_entitas FROM mst_karyawan AS m WHERE m.nip = h.`nip` AND m.kd_entitas IN(SELECT mst_cabang.kd_cabang FROM mst_cabang)), 1, 0) AS status_kantor"),
+                'c.nama_cabang',
+            )
+            ->join('mst_jabatan AS j', 'j.kd_jabatan', 'h.kd_jabatan')
+            ->leftJoin('mst_cabang AS c', 'c.kd_cabang', 'h.kd_entitas')
+            ->leftJoin('mst_bagian AS b', 'b.kd_bagian', 'h.kd_bagian')
+            ->when($search, function($q) use ($search) {
+                $q->where('h.nip', 'like', "%$search%")
+                ->orWhere('h.nik', 'like', "%$search%")
+                ->orWhere('h.nama_karyawan', 'like', "%$search%")
+                ->orWhere('h.kd_entitas', 'like', "%$search%")
+                ->orWhere('h.kd_jabatan', 'like', "%$search%")
+                ->orWhere('h.kd_bagian', 'like', "%$search%")
+                ->orWhere('h.ket_jabatan', 'like', "%$search%")
+                ->orWhere('h.status_karyawan', 'like', "%$search%")
+                ->orWhere('j.nama_jabatan', 'like', "%$search%")
+                ->orWhere('h.status_jabatan', 'like', "%$search%");
+            })
+            ->orderByRaw($orderRaw)
+            ->paginate($limit);
+        foreach($data as $key => $value) {
+            $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
+            $prefix = match ($value->status_jabatan) {
+                'Penjabat' => 'Pj. ',
+                'Penjabat Sementara' => 'Pjs. ',
+                default => '',
+            };
+            
+            $jabatan = '';
+            if ($value->nama_jabatan) {
+                $jabatan = $value->nama_jabatan;
+            } else {
+                $jabatan = 'undifined';
+            }
+            
+            $ket = $value->ket_jabatan ? "({$value->ket_jabatan})" : '';
+            
+            if (isset($value->entitas->subDiv)) {
+                $entitas = $value->entitas->subDiv->nama_subdivisi;
+            } elseif (isset($value->entitas->div)) {
+                $entitas = $value->entitas->div->nama_divisi;
+            } else {
+                $entitas = '';
+            }
+            
+            if ($jabatan == 'Pemimpin Sub Divisi') {
+                $jabatan = 'PSD';
+            } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
+                $jabatan = 'PBO';
+            } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
+                $jabatan = 'PBP';
+            } else {
+                $jabatan = $value->nama_jabatan ? $value->nama_jabatan : 'undifined';
+            }
+            unset($value->entitas);
+            $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $value?->nama_bagian . ' ' . $ket;
+            $value->display_jabatan = $display_jabatan;
+
+            $value->kantor = $value->nama_cabang != null ? $value->nama_cabang : 'Pusat';
+        }
+
+        return $data;
+    }
+
+    public function detailPengkinianData($id) {
+        $returnData = new stdClass;
+        $biodata = new stdClass;
+        $norek = new stdClass;
+        $dataJabatan = new stdClass;
+        $karyawan = DB::table('history_pengkinian_data_karyawan AS h')
+            ->select(
+                'h.*',
+                'j.nama_jabatan',
+                'b.nama_bagian',
+                DB::raw("IF((SELECT m.kd_entitas FROM mst_karyawan AS m WHERE m.nip = h.`nip` AND m.kd_entitas IN(SELECT mst_cabang.kd_cabang FROM mst_cabang)), 1, 0) AS status_kantor"),
+                'c.nama_cabang',
+                'mst_pangkat_golongan.pangkat',
+                'mst_pangkat_golongan.golongan',
+                'mst_agama.agama',
+            )
+            ->where('h.id', $id)
+            ->join('mst_jabatan AS j', 'j.kd_jabatan', 'h.kd_jabatan')
+            ->leftJoin('mst_cabang AS c', 'c.kd_cabang', 'h.kd_entitas')
+            ->leftJoin('mst_bagian AS b', 'b.kd_bagian', 'h.kd_bagian')
+            ->leftJoin('mst_pangkat_golongan', 'mst_pangkat_golongan.golongan', 'h.kd_panggol')
+            ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'h.kd_jabatan')
+            ->leftJoin('mst_agama', 'mst_agama.kd_agama', 'h.kd_agama')
+            ->first();
+        
+        $karyawan->entitas = $this->karyawanController->addEntity($karyawan->kd_entitas);
+        $prefix = match ($karyawan->status_jabatan) {
+            'Penjabat' => 'Pj. ',
+            'Penjabat Sementara' => 'Pjs. ',
+            default => '',
+        };
+        
+        $jabatan = '';
+        if ($karyawan->nama_jabatan) {
+            $jabatan = $karyawan->nama_jabatan;
+        } else {
+            $jabatan = 'undifined';
+        }
+        
+        $ket = $karyawan->ket_jabatan ? "({$karyawan->ket_jabatan})" : '';
+        
+        if ($karyawan->nama_bagian != null && $karyawan->entitas->type == 1){
+            $entitas = '';
+        } else if (isset($karyawan->entitas->subDiv)) {
+            $entitas = $karyawan->entitas->subDiv->nama_subdivisi;
+        } elseif (isset($karyawan->entitas->div)) {
+            $entitas = $karyawan->entitas->div->nama_divisi;
+        } else {
+            $entitas = '';
+        }
+        
+        if ($jabatan == 'Pemimpin Sub Divisi') {
+            $jabatan = 'PSD';
+        } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
+            $jabatan = 'PBO';
+        } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
+            $jabatan = 'PBP';
+        } else {
+            $jabatan = $karyawan?->nama_jabatan ? $karyawan?->nama_jabatan : 'undifined';
+        }
+
+        $karyawan->display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $karyawan?->nama_bagian . ' ' . $ket . ($karyawan->nama_cabang != null ? ' Cabang ' . $karyawan->nama_cabang : ' (Pusat)');
+        unset($karyawan->entitas);
+        return $karyawan;
+    }
 }

@@ -543,6 +543,73 @@ class KaryawanController extends Controller
         }
     }
 
+    public function listPengkinianData(Request $request) {
+        $status = 0;
+        $message = '';
+        $responseCode = Response::HTTP_UNAUTHORIZED;
+        $data = null;
+
+        try {
+            $status = 1;
+            $message = 'Berhasil menampilkan list pengkinian data.';
+            $responseCode = Response::HTTP_OK;
+
+            $limit = $request->get('limit') ?? 10;
+            $search = $request->get('search') ?? '';
+            $page = $request->get('page') ?? 1;
+            $repo = new KaryawanRepository;
+            $data = $repo->listPengkinianData($limit, $search);
+        } catch(Exception $e) {
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } catch(QueryException $e) {
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } finally {
+            $response = [
+                'status' => $status,
+                'message' => $message,
+                'data' => $data
+            ];
+
+            return response()->json($response, $responseCode);
+        }
+    }
+
+    public function detailPengkinianData($id) {
+        $status = 0;
+        $message = '';
+        $responseCode = Response::HTTP_UNAUTHORIZED;
+        $data = null;
+
+        try {
+            $status = 1;
+            $message = 'Berhasil menampilkan detail pengkinian data';
+            $responseCode = Response::HTTP_OK;
+            
+            $repo = new KaryawanRepository;
+            $data = $repo->detailPengkinianData($id);
+        } catch (Exception $e) {
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } catch (QueryException $e) {
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } finally {
+            $response = [
+                'status' => $status,
+                'message' => $message,
+                'data' => $data
+            ];
+
+            return response()->json($response, $responseCode);
+        }
+    }
+
     public function addEntity($karyawan)
     {
         return $this->getEntity($karyawan);

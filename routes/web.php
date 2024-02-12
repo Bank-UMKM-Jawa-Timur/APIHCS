@@ -38,6 +38,11 @@ $router->group(['prefix' => 'reminder-pensiun'], function () use ($router){
     $router->get('/{id}', 'KaryawanController@detailDataPensiun');
 });
 
+$router->group(['prefix' => 'pengkinian-data'], function () use ($router) {
+    $router->get('/', 'KaryawanController@listPengkinianData');
+    $router->get('/{id}', 'KaryawanController@detailPengkinianData');
+});
+
 $router->get('/cabang', 'CabangController@showCabang');
 $router->get('/divisi', 'DivisiController@showDivisi');
 $router->get('/sub-divisi/{id}', 'SubdivisiController@showSubdivisi');
