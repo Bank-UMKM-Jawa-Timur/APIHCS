@@ -43,6 +43,12 @@ $router->group(['prefix' => 'pengkinian-data'], function () use ($router) {
     $router->get('/{id}', 'KaryawanController@detailPengkinianData');
 });
 
+$router->group(['prefix' => 'pergerakan-karir'], function () use ($router) {
+    $router->get('/mutasi', 'KaryawanController@listMutasi');
+    $router->get('/promosi', 'KaryawanController@listPromosi');
+    $router->get('/demosi', 'KaryawanController@listDemosi');
+});
+
 $router->get('/cabang', 'CabangController@showCabang');
 $router->get('/divisi', 'DivisiController@showDivisi');
 $router->get('/sub-divisi/{id}', 'SubdivisiController@showSubdivisi');
