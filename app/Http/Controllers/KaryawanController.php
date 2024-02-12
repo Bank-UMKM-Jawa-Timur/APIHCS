@@ -140,6 +140,7 @@ class KaryawanController extends Controller
             
                         $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $karyawan?->nama_bagian . ' ' . $ket . ($karyawan->nama_cabang != null ? ' Cabang ' . $karyawan->nama_cabang : '');
                         $returnData->display_jabatan = $display_jabatan;
+                        $returnData->tipe = 'Karyawan';
                     } else {
                         $returnData->nip = null;
                         $returnData->nama_karyawan = $user->username;
@@ -148,6 +149,7 @@ class KaryawanController extends Controller
                         $returnData->lama_kerja = null;
                         $returnData->no_rekening = null;
                         $returnData->display_jabatan = 'SDM';
+                        $returnData->tipe = 'User';
                     }
                     // End get data karyawan
 
