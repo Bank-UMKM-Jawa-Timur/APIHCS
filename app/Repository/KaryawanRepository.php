@@ -37,18 +37,22 @@ class KaryawanRepository
 
     public function searchGetCKaryawan($search)
     {
-        $data = DB::table('mst_karyawan')
-            ->select(
-                'mst_karyawan.nip',
-                'mst_karyawan.nama_karyawan',
-            )
-            ->where(function ($query) use ($search) {
-                $query->where('mst_karyawan.nama_karyawan', 'like', "%$search%")
-                    ->orWhere('mst_karyawan.nip', 'like', "%$search%");
-            })
-            ->get();
+        if ($search) {
+            $data = DB::table('mst_karyawan')
+                ->select(
+                    'mst_karyawan.nip',
+                    'mst_karyawan.nama_karyawan',
+                )
+                ->where(function ($query) use ($search) {
+                    $query->where('mst_karyawan.nama_karyawan', 'like', "%$search%")
+                        ->orWhere('mst_karyawan.nip', 'like', "%$search%");
+                })
+                ->simplePaginate(10);
 
-        return $data;
+            return $data->items();
+        } else {
+            return [];
+        }
     }
 
     public function getAllKaryawan($search, $limit = 10, $page = 1)
