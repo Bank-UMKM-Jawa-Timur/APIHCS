@@ -35,7 +35,24 @@ class KaryawanRepository
         ";
     }
 
-    public function getAllKaryawan($search, $limit = 10, $page = 1) {
+    public function searchGetCKaryawan($search)
+    {
+        $data = DB::table('mst_karyawan')
+            ->select(
+                'mst_karyawan.nip',
+                'mst_karyawan.nama_karyawan',
+            )
+            ->where(function ($query) use ($search) {
+                $query->where('mst_karyawan.nama_karyawan', 'like', "%$search%")
+                    ->orWhere('mst_karyawan.nip', 'like', "%$search%");
+            })
+            ->get();
+
+        return $data;
+    }
+
+    public function getAllKaryawan($search, $limit = 10, $page = 1)
+    {
         $kd_cabang = DB::table('mst_cabang')
             ->select('kd_cabang')
             ->pluck('kd_cabang')
@@ -72,32 +89,31 @@ class KaryawanRepository
                     ->orWhere('mst_karyawan.kd_entitas', 'like', "%$search%")
                     ->orWhere('mst_karyawan.status_jabatan', 'like', "%$search%")
                     ->orWhere('mst_cabang.nama_cabang', 'like', "%$search%")
-                    ->orWhere(function($q2) use ($search, $kd_cabang) {
+                    ->orWhere(function ($q2) use ($search, $kd_cabang) {
                         if (str_contains($search, 'pusat')) {
                             $q2->whereNotIn('mst_karyawan.kd_entitas', $kd_cabang)
-                            ->orWhereNull('mst_karyawan.kd_entitas');
-                        }
-                        else {
+                                ->orWhereNull('mst_karyawan.kd_entitas');
+                        } else {
                             $q2->where('mst_cabang.nama_cabang', 'like', "%$search%");
                         }
                     })
                     ->orWhere('mst_karyawan.ket_jabatan', 'like', "%$search%");
-                    // ->orWhereHas('jabatan', function($query3) use ($search) {
-                    //     $query3->where("nama_jabatan", 'like', "%$search%");
-                    // })
-                    // ->orWhereHas('bagian', function($query3) use ($search) {
-                    //     $query3->where("nama_bagian", 'like', "%$search%");
-                    // })
-                    // ->orWhere(function($query2) use ($search) {
-                    //     $query2->orWhereHas('jabatan', function($query3) use ($search) {
-                    //         $query3->where("nama_jabatan", 'like', "%$search%")
-                    //             ->orWhereRaw("MATCH(nama_jabatan) AGAINST('$search')");
-                    //     })
-                    //     ->whereHas('bagian', function($query3) use ($search) {
-                    //         $query3->whereRaw("MATCH(nama_bagian) AGAINST('$search')")
-                    //             ->orWhereRaw("MATCH(nama_bagian) AGAINST('$search')");
-                    //     });
-                    // });
+                // ->orWhereHas('jabatan', function($query3) use ($search) {
+                //     $query3->where("nama_jabatan", 'like', "%$search%");
+                // })
+                // ->orWhereHas('bagian', function($query3) use ($search) {
+                //     $query3->where("nama_bagian", 'like', "%$search%");
+                // })
+                // ->orWhere(function($query2) use ($search) {
+                //     $query2->orWhereHas('jabatan', function($query3) use ($search) {
+                //         $query3->where("nama_jabatan", 'like', "%$search%")
+                //             ->orWhereRaw("MATCH(nama_jabatan) AGAINST('$search')");
+                //     })
+                //     ->whereHas('bagian', function($query3) use ($search) {
+                //         $query3->whereRaw("MATCH(nama_bagian) AGAINST('$search')")
+                //             ->orWhereRaw("MATCH(nama_bagian) AGAINST('$search')");
+                //     });
+                // });
             })
             ->orderByRaw($this->orderRaw)
             ->orderBy('kd_cabang', 'asc')
@@ -105,22 +121,22 @@ class KaryawanRepository
             ->paginate($limit);
 
         $this->karyawanController->addEntity($data);
-        foreach($data as $value) {
+        foreach ($data as $value) {
             $prefix = match ($value->status_jabatan) {
                 'Penjabat' => 'Pj. ',
                 'Penjabat Sementara' => 'Pjs. ',
                 default => '',
             };
-            
+
             $jabatan = '';
             if ($value->nama_jabatan) {
                 $jabatan = $value->nama_jabatan;
             } else {
                 $jabatan = 'undifined';
             }
-            
+
             $ket = $value->ket_jabatan ? "({$value->ket_jabatan})" : '';
-            
+
             if (isset($value->entitas->subDiv)) {
                 $entitas = $value->entitas->subDiv->nama_subdivisi;
             } elseif (isset($value->entitas->div)) {
@@ -128,7 +144,7 @@ class KaryawanRepository
             } else {
                 $entitas = '';
             }
-            
+
             if ($jabatan == 'Pemimpin Sub Divisi') {
                 $jabatan = 'PSD';
             } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
@@ -147,131 +163,133 @@ class KaryawanRepository
         return $data;
     }
 
-    public function getDetailKaryawan($id) {
+    public function getDetailKaryawan($id)
+    {
         $karyawan = DB::table('mst_karyawan')
             ->where('nip', $id)
             ->first();
-        if($karyawan == null){
+        if ($karyawan == null) {
             $status = 0;
             $message = 'Karyawan tidak ditemukan.';
         } else {
             $karyawan = DB::table('mst_karyawan')
-                    ->where('nip', $id)
-                    ->leftJoin('mst_cabang', 'mst_cabang.kd_cabang', 'mst_karyawan.kd_entitas')
-                    ->leftJoin('mst_bagian', 'mst_bagian.kd_bagian', 'mst_karyawan.kd_bagian')
-                    ->leftJoin('mst_pangkat_golongan', 'mst_pangkat_golongan.golongan', 'mst_karyawan.kd_panggol')
-                    ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
-                    ->leftJoin('mst_agama', 'mst_agama.kd_agama', 'mst_karyawan.kd_agama')
-                    ->select(
-                        'mst_karyawan.*',
-                        'mst_jabatan.nama_jabatan',
-                        'mst_bagian.nama_bagian',
-                        'mst_cabang.nama_cabang',
-                        'mst_pangkat_golongan.pangkat',
-                        'mst_pangkat_golongan.golongan',
-                        'mst_agama.agama',
-                    )
-                    ->first();
-                    
-                $dataKaryawan = new stdClass;
-                $returnData = new stdClass;
-                $biodata = new stdClass;
-                $norek = new stdClass;
-                $dataJabatan = new stdClass;
-                $mulaKerja = Carbon::create($karyawan->tanggal_pengangkat);
-                $waktuSekarang = Carbon::now();
-                $hitung = $waktuSekarang->diff($mulaKerja);
-                $tahunKerja = (int) $hitung->format('%y'); 
-                $bulanKerja = (int) $hitung->format('%m'); 
-                $masaKerja = $hitung->format('%y Tahun, %m Bulan');
-                $tanggalLahir = Carbon::create($karyawan->tgl_lahir);
-                $hitung = $waktuSekarang->diff($tanggalLahir);
-                $umur = $hitung->format('%y Tahun | %m Bulan | %d Hari');
+                ->where('nip', $id)
+                ->leftJoin('mst_cabang', 'mst_cabang.kd_cabang', 'mst_karyawan.kd_entitas')
+                ->leftJoin('mst_bagian', 'mst_bagian.kd_bagian', 'mst_karyawan.kd_bagian')
+                ->leftJoin('mst_pangkat_golongan', 'mst_pangkat_golongan.golongan', 'mst_karyawan.kd_panggol')
+                ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
+                ->leftJoin('mst_agama', 'mst_agama.kd_agama', 'mst_karyawan.kd_agama')
+                ->select(
+                    'mst_karyawan.*',
+                    'mst_jabatan.nama_jabatan',
+                    'mst_bagian.nama_bagian',
+                    'mst_cabang.nama_cabang',
+                    'mst_pangkat_golongan.pangkat',
+                    'mst_pangkat_golongan.golongan',
+                    'mst_agama.agama',
+                )
+                ->first();
 
-                // Biodata diri
-                $biodata->nip = $karyawan->nip;
-                $biodata->nik = $karyawan->nik;
-                $biodata->nama_karyawan = $karyawan->nama_karyawan;
-                $biodata->ttl = $karyawan->tmp_lahir . ', ' . date('d F Y', strtotime($karyawan->tgl_lahir));
-                $biodata->umur = $umur;
-                $biodata->agama = $karyawan->agama;
-                $biodata->status_pernikahan = $karyawan->status_ptkp;
-                $biodata->kewarganegaraan = $karyawan->kewarganegaraan;
-                $biodata->alamat_ktp = $karyawan->alamat_ktp;
-                $biodata->alamat_sek = $karyawan->alamat_sek;
-                $biodata->jenis_kelamin = $karyawan->jk;
-                // End biodata diri
+            $dataKaryawan = new stdClass;
+            $returnData = new stdClass;
+            $biodata = new stdClass;
+            $norek = new stdClass;
+            $dataJabatan = new stdClass;
+            $mulaKerja = Carbon::create($karyawan->tanggal_pengangkat);
+            $waktuSekarang = Carbon::now();
+            $hitung = $waktuSekarang->diff($mulaKerja);
+            $tahunKerja = (int) $hitung->format('%y');
+            $bulanKerja = (int) $hitung->format('%m');
+            $masaKerja = $hitung->format('%y Tahun, %m Bulan');
+            $tanggalLahir = Carbon::create($karyawan->tgl_lahir);
+            $hitung = $waktuSekarang->diff($tanggalLahir);
+            $umur = $hitung->format('%y Tahun | %m Bulan | %d Hari');
 
-                // Norek & NPWP
-                $norek->no_rek = $karyawan->no_rekening;
-                $norek->npwp = $karyawan->npwp;
-                // End Norek & NPWP
+            // Biodata diri
+            $biodata->nip = $karyawan->nip;
+            $biodata->nik = $karyawan->nik;
+            $biodata->nama_karyawan = $karyawan->nama_karyawan;
+            $biodata->ttl = $karyawan->tmp_lahir . ', ' . date('d F Y', strtotime($karyawan->tgl_lahir));
+            $biodata->umur = $umur;
+            $biodata->agama = $karyawan->agama;
+            $biodata->status_pernikahan = $karyawan->status_ptkp;
+            $biodata->kewarganegaraan = $karyawan->kewarganegaraan;
+            $biodata->alamat_ktp = $karyawan->alamat_ktp;
+            $biodata->alamat_sek = $karyawan->alamat_sek;
+            $biodata->jenis_kelamin = $karyawan->jk;
+            // End biodata diri
 
-                // Data Jabatan
-                $dataJabatan->tanggal_bergabung = Carbon::parse($karyawan->tanggal_pengangkat)->translatedFormat('d F Y');
-                $dataJabatan->lama_kerja = $masaKerja;
-                $dataJabatan->pangkat = $karyawan->pangkat;
-                $dataJabatan->golongan = $karyawan->golongan;
-                $dataJabatan->status_karyawan = $karyawan->status_karyawan;
-                $dataJabatan->status_jabatan = $karyawan->status_jabatan;
-                $dataJabatan->keterangan_jabatan = $karyawan->ket_jabatan;
-                $dataJabatan->tanggal_mulai = date('d F Y', strtotime($karyawan->tgl_mulai));
-                $dataJabatan->pendidikan_terakhir = $karyawan->pendidikan;
-                $dataJabatan->pendidikan_major = $karyawan->pendidikan_major;
-                $dataJabatan->sk_pengangkatan = $karyawan->skangkat;
-                $dataJabatan->tanggal_pengangkatan = $karyawan->tanggal_pengangkat;
-                $dataKaryawan->entitas = $this->karyawanController->addEntity($karyawan->kd_entitas);
-                $prefix = match ($karyawan->status_jabatan) {
-                    'Penjabat' => 'Pj. ',
-                    'Penjabat Sementara' => 'Pjs. ',
-                    default => '',
-                };
-                
-                $jabatan = '';
-                if ($karyawan->nama_jabatan) {
-                    $jabatan = $karyawan->nama_jabatan;
-                } else {
-                    $jabatan = 'undifined';
-                }
-                
-                $ket = $karyawan->ket_jabatan ? "({$karyawan->ket_jabatan})" : '';
-                
-                if ($karyawan->nama_bagian != null && $dataKaryawan->entitas->type == 1){
-                    $entitas = '';
-                } else if (isset($dataKaryawan->entitas->subDiv)) {
-                    $entitas = $dataKaryawan->entitas->subDiv->nama_subdivisi;
-                } elseif (isset($dataKaryawan->entitas->div)) {
-                    $entitas = $dataKaryawan->entitas->div->nama_divisi;
-                } else {
-                    $entitas = '';
-                }
-                
-                if ($jabatan == 'Pemimpin Sub Divisi') {
-                    $jabatan = 'PSD';
-                } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
-                    $jabatan = 'PBO';
-                } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
-                    $jabatan = 'PBP';
-                } else {
-                    $jabatan = $karyawan?->nama_jabatan ? $karyawan?->nama_jabatan : 'undifined';
-                }
-    
-                $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $karyawan?->nama_bagian . ' ' . $ket . ($karyawan->nama_cabang != null ? ' Cabang ' . $karyawan->nama_cabang : ' (Pusat)');
-                $dataJabatan->display_jabatan = $display_jabatan;
+            // Norek & NPWP
+            $norek->no_rek = $karyawan->no_rekening;
+            $norek->npwp = $karyawan->npwp;
+            // End Norek & NPWP
 
-                $returnData->biodata = $biodata;
-                $returnData->norek_npwp = $norek;
-                $returnData->data_jabatan = $dataJabatan;
-                $data = $returnData;
+            // Data Jabatan
+            $dataJabatan->tanggal_bergabung = Carbon::parse($karyawan->tanggal_pengangkat)->translatedFormat('d F Y');
+            $dataJabatan->lama_kerja = $masaKerja;
+            $dataJabatan->pangkat = $karyawan->pangkat;
+            $dataJabatan->golongan = $karyawan->golongan;
+            $dataJabatan->status_karyawan = $karyawan->status_karyawan;
+            $dataJabatan->status_jabatan = $karyawan->status_jabatan;
+            $dataJabatan->keterangan_jabatan = $karyawan->ket_jabatan;
+            $dataJabatan->tanggal_mulai = date('d F Y', strtotime($karyawan->tgl_mulai));
+            $dataJabatan->pendidikan_terakhir = $karyawan->pendidikan;
+            $dataJabatan->pendidikan_major = $karyawan->pendidikan_major;
+            $dataJabatan->sk_pengangkatan = $karyawan->skangkat;
+            $dataJabatan->tanggal_pengangkatan = $karyawan->tanggal_pengangkat;
+            $dataKaryawan->entitas = $this->karyawanController->addEntity($karyawan->kd_entitas);
+            $prefix = match ($karyawan->status_jabatan) {
+                'Penjabat' => 'Pj. ',
+                'Penjabat Sementara' => 'Pjs. ',
+                default => '',
+            };
+
+            $jabatan = '';
+            if ($karyawan->nama_jabatan) {
+                $jabatan = $karyawan->nama_jabatan;
+            } else {
+                $jabatan = 'undifined';
+            }
+
+            $ket = $karyawan->ket_jabatan ? "({$karyawan->ket_jabatan})" : '';
+
+            if ($karyawan->nama_bagian != null && $dataKaryawan->entitas->type == 1) {
+                $entitas = '';
+            } else if (isset($dataKaryawan->entitas->subDiv)) {
+                $entitas = $dataKaryawan->entitas->subDiv->nama_subdivisi;
+            } elseif (isset($dataKaryawan->entitas->div)) {
+                $entitas = $dataKaryawan->entitas->div->nama_divisi;
+            } else {
+                $entitas = '';
+            }
+
+            if ($jabatan == 'Pemimpin Sub Divisi') {
+                $jabatan = 'PSD';
+            } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
+                $jabatan = 'PBO';
+            } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
+                $jabatan = 'PBP';
+            } else {
+                $jabatan = $karyawan?->nama_jabatan ? $karyawan?->nama_jabatan : 'undifined';
+            }
+
+            $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $karyawan?->nama_bagian . ' ' . $ket . ($karyawan->nama_cabang != null ? ' Cabang ' . $karyawan->nama_cabang : ' (Pusat)');
+            $dataJabatan->display_jabatan = $display_jabatan;
+
+            $returnData->biodata = $biodata;
+            $returnData->norek_npwp = $norek;
+            $returnData->data_jabatan = $dataJabatan;
+            $data = $returnData;
         }
 
         return $data;
     }
 
-    public function getDataPensiun($request = []){
+    public function getDataPensiun($request = [])
+    {
         $kategori = strtolower($request['kategori']);
 
-        if($kategori == 'divisi') {
+        if ($kategori == 'divisi') {
             $subDivs = DB::table('mst_sub_divisi')->where('kd_divisi', $request['divisi'])
                 ->pluck('kd_subdiv');
 
@@ -279,7 +297,7 @@ class KaryawanRepository
                 ->orWhere('kd_entitas', $request['divisi'])
                 ->pluck('kd_bagian');
 
-                $data = DB::table('mst_karyawan')
+            $data = DB::table('mst_karyawan')
                 ->select(
                     'mst_karyawan.nip',
                     'mst_karyawan.nik',
@@ -310,12 +328,12 @@ class KaryawanRepository
                 ->orderBy('kd_cabang', 'asc')
                 ->orderBy('kd_entitas', 'asc')
                 ->paginate(25);
-        } else if($kategori == 'sub divisi') {
+        } else if ($kategori == 'sub divisi') {
             $entitas = $request['subDivisi'] ?? $request['divisi'];
 
             $bagian = DB::table('mst_bagian')->where('kd_entitas', $entitas)
                 ->pluck('kd_bagian');
-                $data = DB::table('mst_karyawan')
+            $data = DB::table('mst_karyawan')
                 ->select(
                     'mst_karyawan.nip',
                     'mst_karyawan.nik',
@@ -345,7 +363,7 @@ class KaryawanRepository
                 ->orderBy('kd_cabang', 'asc')
                 ->orderBy('kd_entitas', 'asc')
                 ->paginate(25);
-        } else if($kategori == 'bagian') {
+        } else if ($kategori == 'bagian') {
             $data = DB::table('mst_karyawan')
                 ->select(
                     'mst_karyawan.nip',
@@ -376,8 +394,8 @@ class KaryawanRepository
                 ->orderBy('kd_cabang', 'asc')
                 ->orderBy('kd_entitas', 'asc')
                 ->paginate(25);
-        } else if($kategori == 'kantor') {
-            if($request['kantor'] == 'Cabang'){
+        } else if ($kategori == 'kantor') {
+            if ($request['kantor'] == 'Cabang') {
                 $data = DB::table('mst_karyawan')
                     ->select(
                         'mst_karyawan.nip',
@@ -406,8 +424,7 @@ class KaryawanRepository
                     ->orderBy('kd_cabang', 'asc')
                     ->orderBy('kd_entitas', 'asc')
                     ->paginate(25);
-            }
-            else {
+            } else {
                 $kd_cabang = DB::table('mst_cabang')
                     ->select('kd_cabang')
                     ->pluck('kd_cabang')
@@ -474,24 +491,24 @@ class KaryawanRepository
                 ->orderBy('kd_entitas', 'asc')
                 ->paginate(25);
         }
-        
-        foreach($data as $value) {
+
+        foreach ($data as $value) {
             $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
             $prefix = match ($value->status_jabatan) {
                 'Penjabat' => 'Pj. ',
                 'Penjabat Sementara' => 'Pjs. ',
                 default => '',
             };
-            
+
             $jabatan = '';
             if ($value->nama_jabatan) {
                 $jabatan = $value->nama_jabatan;
             } else {
                 $jabatan = 'undifined';
             }
-            
+
             $ket = $value->ket_jabatan ? "({$value->ket_jabatan})" : '';
-            
+
             if (isset($value->entitas->subDiv)) {
                 $entitas = $value->entitas->subDiv->nama_subdivisi;
             } elseif (isset($value->entitas->div)) {
@@ -499,7 +516,7 @@ class KaryawanRepository
             } else {
                 $entitas = '';
             }
-            
+
             if ($jabatan == 'Pemimpin Sub Divisi') {
                 $jabatan = 'PSD';
             } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
@@ -512,7 +529,7 @@ class KaryawanRepository
             unset($value->entitas);
             $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $value?->nama_bagian . ' ' . $ket;
             $value->display_jabatan = $display_jabatan;
-            
+
             $umur = Carbon::create($value->tgl_lahir);
             $waktuSekarang = Carbon::now();
             $hitung = $waktuSekarang->diff($umur);
@@ -522,9 +539,9 @@ class KaryawanRepository
             $hitungPensiun = $pensiun->diff($waktuSekarang);
             $tampilPensiun = null;
 
-            if($waktuSekarang->diffInYears($umur) >= 54){
+            if ($waktuSekarang->diffInYears($umur) >= 54) {
                 $tampilPensiun = 'Persiapan pensiun dalam ' . $hitungPensiun->format('%y Tahun, %m Bulan, %d Hari');
-            } else if($waktuSekarang->diffInYears($umur) >= 56) {
+            } else if ($waktuSekarang->diffInYears($umur) >= 56) {
                 $tampilPensiun = 'Telah melebihi batas pensiun.';
             }
             $value->pensiun = $tampilPensiun;
@@ -534,7 +551,8 @@ class KaryawanRepository
         return $data;
     }
 
-    public function listPengkinianData($limit = 10, $search = null) {
+    public function listPengkinianData($limit = 10, $search = null)
+    {
         $orderRaw = "
             CASE 
             WHEN h.kd_jabatan='DIRUT' THEN 1
@@ -574,37 +592,37 @@ class KaryawanRepository
             ->join('mst_jabatan AS j', 'j.kd_jabatan', 'h.kd_jabatan')
             ->leftJoin('mst_cabang AS c', 'c.kd_cabang', 'h.kd_entitas')
             ->leftJoin('mst_bagian AS b', 'b.kd_bagian', 'h.kd_bagian')
-            ->when($search, function($q) use ($search) {
+            ->when($search, function ($q) use ($search) {
                 $q->where('h.nip', 'like', "%$search%")
-                ->orWhere('h.nik', 'like', "%$search%")
-                ->orWhere('h.nama_karyawan', 'like', "%$search%")
-                ->orWhere('h.kd_entitas', 'like', "%$search%")
-                ->orWhere('h.kd_jabatan', 'like', "%$search%")
-                ->orWhere('h.kd_bagian', 'like', "%$search%")
-                ->orWhere('h.ket_jabatan', 'like', "%$search%")
-                ->orWhere('h.status_karyawan', 'like', "%$search%")
-                ->orWhere('j.nama_jabatan', 'like', "%$search%")
-                ->orWhere('h.status_jabatan', 'like', "%$search%");
+                    ->orWhere('h.nik', 'like', "%$search%")
+                    ->orWhere('h.nama_karyawan', 'like', "%$search%")
+                    ->orWhere('h.kd_entitas', 'like', "%$search%")
+                    ->orWhere('h.kd_jabatan', 'like', "%$search%")
+                    ->orWhere('h.kd_bagian', 'like', "%$search%")
+                    ->orWhere('h.ket_jabatan', 'like', "%$search%")
+                    ->orWhere('h.status_karyawan', 'like', "%$search%")
+                    ->orWhere('j.nama_jabatan', 'like', "%$search%")
+                    ->orWhere('h.status_jabatan', 'like', "%$search%");
             })
             ->orderByRaw($orderRaw)
             ->paginate($limit);
-        foreach($data as $key => $value) {
+        foreach ($data as $key => $value) {
             $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
             $prefix = match ($value->status_jabatan) {
                 'Penjabat' => 'Pj. ',
                 'Penjabat Sementara' => 'Pjs. ',
                 default => '',
             };
-            
+
             $jabatan = '';
             if ($value->nama_jabatan) {
                 $jabatan = $value->nama_jabatan;
             } else {
                 $jabatan = 'undifined';
             }
-            
+
             $ket = $value->ket_jabatan ? "({$value->ket_jabatan})" : '';
-            
+
             if (isset($value->entitas->subDiv)) {
                 $entitas = $value->entitas->subDiv->nama_subdivisi;
             } elseif (isset($value->entitas->div)) {
@@ -612,7 +630,7 @@ class KaryawanRepository
             } else {
                 $entitas = '';
             }
-            
+
             if ($jabatan == 'Pemimpin Sub Divisi') {
                 $jabatan = 'PSD';
             } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
@@ -632,7 +650,8 @@ class KaryawanRepository
         return $data;
     }
 
-    public function detailPengkinianData($id) {
+    public function detailPengkinianData($id)
+    {
         $returnData = new stdClass;
         $biodata = new stdClass;
         $norek = new stdClass;
@@ -656,24 +675,24 @@ class KaryawanRepository
             ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'h.kd_jabatan')
             ->leftJoin('mst_agama', 'mst_agama.kd_agama', 'h.kd_agama')
             ->first();
-        
+
         $karyawan->entitas = $this->karyawanController->addEntity($karyawan->kd_entitas);
         $prefix = match ($karyawan->status_jabatan) {
             'Penjabat' => 'Pj. ',
             'Penjabat Sementara' => 'Pjs. ',
             default => '',
         };
-        
+
         $jabatan = '';
         if ($karyawan->nama_jabatan) {
             $jabatan = $karyawan->nama_jabatan;
         } else {
             $jabatan = 'undifined';
         }
-        
+
         $ket = $karyawan->ket_jabatan ? "({$karyawan->ket_jabatan})" : '';
-        
-        if ($karyawan->nama_bagian != null && $karyawan->entitas->type == 1){
+
+        if ($karyawan->nama_bagian != null && $karyawan->entitas->type == 1) {
             $entitas = '';
         } else if (isset($karyawan->entitas->subDiv)) {
             $entitas = $karyawan->entitas->subDiv->nama_subdivisi;
@@ -682,7 +701,7 @@ class KaryawanRepository
         } else {
             $entitas = '';
         }
-        
+
         if ($jabatan == 'Pemimpin Sub Divisi') {
             $jabatan = 'PSD';
         } elseif ($jabatan == 'Pemimpin Bidang Operasional') {

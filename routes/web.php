@@ -28,12 +28,13 @@ $router->group(['prefix' => 'slip-gaji'], function () use ($router) {
 $router->post('/change-password', 'KaryawanController@changePassword');
 $router->get('/biodata/{id}', 'KaryawanController@biodata');
 
-$router->group(['prefix' => 'karyawan'], function () use ($router){
+$router->group(['prefix' => 'karyawan'], function () use ($router) {
+    $router->get('/search', 'KaryawanController@searchKaryawan');
     $router->get('/', 'KaryawanController@listKaryawan');
     $router->get('/{id}', 'KaryawanController@detailKaryawan');
 });
 
-$router->group(['prefix' => 'reminder-pensiun'], function () use ($router){
+$router->group(['prefix' => 'reminder-pensiun'], function () use ($router) {
     $router->get('/', 'KaryawanController@listDataPensiun');
     $router->get('/{id}', 'KaryawanController@detailDataPensiun');
 });

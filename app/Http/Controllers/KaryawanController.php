@@ -26,12 +26,13 @@ class KaryawanController extends Controller
         //
     }
 
-    public function login(Request $request){
+    public function login(Request $request)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
         $data = null;
-        try{
+        try {
             $responseCode = Response::HTTP_OK;
             $karyawan = DB::table('mst_karyawan')
                 ->where('nip', $request->get('nip'))
@@ -43,10 +44,10 @@ class KaryawanController extends Controller
                 ->where('roles.name', 'SDM')
                 ->select('users.*')
                 ->first();
-            if($karyawan != null || $user != null){
-                if(($karyawan != null && !Hash::check($request->get('password'), $karyawan->password)) || ($user && !Hash::check($request->get('password'), $user->password))){
+            if ($karyawan != null || $user != null) {
+                if (($karyawan != null && !Hash::check($request->get('password'), $karyawan->password)) || ($user && !Hash::check($request->get('password'), $user->password))) {
                     $message = 'Password yang anda masukkan salah';
-                } else if(DB::table('personal_access_tokens')->where('tokenable_id', $request->get('nip'))->count() > 0) {
+                } else if (DB::table('personal_access_tokens')->where('tokenable_id', $request->get('nip'))->count() > 0) {
                     $message = 'Akun sedang digunakan di perangkat lain.';
                 } else {
                     DB::beginTransaction();
@@ -58,14 +59,14 @@ class KaryawanController extends Controller
                             'token' => Hash::make($request->get('nip')),
                             'created_at' => date('Y-m-d H:i:s')
                         ]);
-                    
+
                     $status = 1;
                     $message = 'Berhasil login';
 
                     $dataKaryawan = new stdClass;
                     $returnData = new stdClass;
-                    
-                    if($karyawan != null){
+
+                    if ($karyawan != null) {
                         $karyawan = DB::table('mst_karyawan')
                             ->where('nip', $request->get('nip'))
                             ->leftJoin('mst_cabang', 'mst_cabang.kd_cabang', 'mst_karyawan.kd_entitas')
@@ -96,10 +97,10 @@ class KaryawanController extends Controller
                         $mulaKerja = Carbon::create($karyawan->tanggal_pengangkat);
                         $waktuSekarang = Carbon::now();
                         $hitung = $waktuSekarang->diff($mulaKerja);
-                        $tahunKerja = (int) $hitung->format('%y'); 
-                        $bulanKerja = (int) $hitung->format('%m'); 
+                        $tahunKerja = (int) $hitung->format('%y');
+                        $bulanKerja = (int) $hitung->format('%m');
                         $masaKerja = $hitung->format('%y Tahun, %m Bulan');
-                        
+
                         $returnData->nip = $karyawan->nip;
                         $returnData->nama_karyawan = $karyawan->nama_karyawan;
                         $returnData->jenis_kelamin = $karyawan->jk;
@@ -112,17 +113,17 @@ class KaryawanController extends Controller
                             'Penjabat Sementara' => 'Pjs. ',
                             default => '',
                         };
-                        
+
                         $jabatan = '';
                         if ($karyawan->nama_jabatan) {
                             $jabatan = $karyawan->nama_jabatan;
                         } else {
                             $jabatan = 'undifined';
                         }
-                        
+
                         $ket = $karyawan->ket_jabatan ? "({$karyawan->ket_jabatan})" : '';
-                        
-                        if ($karyawan->nama_bagian != null && $dataKaryawan->entitas->type == 1){
+
+                        if ($karyawan->nama_bagian != null && $dataKaryawan->entitas->type == 1) {
                             $entitas = '';
                         } else if (isset($dataKaryawan->entitas->subDiv)) {
                             $entitas = $dataKaryawan->entitas->subDiv->nama_subdivisi;
@@ -131,7 +132,7 @@ class KaryawanController extends Controller
                         } else {
                             $entitas = '';
                         }
-                        
+
                         if ($jabatan == 'Pemimpin Sub Divisi') {
                             $jabatan = 'PSD';
                         } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
@@ -141,7 +142,7 @@ class KaryawanController extends Controller
                         } else {
                             $jabatan = $karyawan?->nama_jabatan ? $karyawan?->nama_jabatan : 'undifined';
                         }
-            
+
                         $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $karyawan?->nama_bagian . ' ' . $ket . ($karyawan->nama_cabang != null ? ' Cabang ' . $karyawan->nama_cabang : '');
                         $returnData->display_jabatan = $display_jabatan;
                         $returnData->tipe = 'Karyawan';
@@ -163,18 +164,17 @@ class KaryawanController extends Controller
             } else {
                 $message = 'NIP tidak dapat ditemukan';
             }
-        } catch (Exception $e){
+        } catch (Exception $e) {
             DB::rollBack();
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch (QueryException $e){
+        } catch (QueryException $e) {
             DB::rollBack();
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } 
-        finally{
+        } finally {
             $response = [
                 'status' => $status,
                 'message' => $message,
@@ -185,13 +185,14 @@ class KaryawanController extends Controller
         }
     }
 
-    public function logout(Request $request){
+    public function logout(Request $request)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
 
         DB::beginTransaction();
-        try{
+        try {
             $responseCode = Response::HTTP_OK;
             $data = DB::table('personal_access_tokens')
                 ->where('tokenable_id', $request->get('nip'))
@@ -199,12 +200,12 @@ class KaryawanController extends Controller
             DB::commit();
             $message = 'Berhasil logout.';
             $status = 1;
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch(QueryException $e) {
+        } catch (QueryException $e) {
             DB::rollBack();
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
@@ -219,21 +220,22 @@ class KaryawanController extends Controller
         }
     }
 
-    public function getSlipGaji(Request $request){
+    public function getSlipGaji(Request $request)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
         $data = null;
 
-        try{
+        try {
             $month = $request->get('month');
             $year = $request->get('year');
             $nip = $request->get('nip');
-            
-        } catch (Exception $e){
+
+        } catch (Exception $e) {
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch (QueryException $e){
+        } catch (QueryException $e) {
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
         } finally {
@@ -249,9 +251,10 @@ class KaryawanController extends Controller
 
     private static function getEntity($entity)
     {
-        if (!$entity) return (object) [
-            'type' => 1,
-        ];
+        if (!$entity)
+            return (object) [
+                'type' => 1,
+            ];
 
         $subDiv = DB::table('mst_sub_divisi')
             ->select('*')
@@ -268,17 +271,19 @@ class KaryawanController extends Controller
             ->where('kd_cabang', $entity)
             ->first();
 
-        if ($subDiv) return (object) [
-            'type' => 1,
-            'subDiv' => $subDiv,
-            'div' => $div
-        ];
+        if ($subDiv)
+            return (object) [
+                'type' => 1,
+                'subDiv' => $subDiv,
+                'div' => $div
+            ];
 
-        if ($div) return (object) [
-            'type' => 1,
-            'div' => $div,
-            'subDiv' => null
-        ];
+        if ($div)
+            return (object) [
+                'type' => 1,
+                'div' => $div,
+                'subDiv' => null
+            ];
 
         return (object) [
             'type' => 2,
@@ -286,14 +291,15 @@ class KaryawanController extends Controller
         ];
     }
 
-    public function changePassword(Request $request){
+    public function changePassword(Request $request)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
         $data = null;
 
         DB::beginTransaction();
-        try{
+        try {
             DB::table('mst_karyawan')
                 ->where('nip', $request->get('nip'))
                 ->update([
@@ -304,11 +310,11 @@ class KaryawanController extends Controller
             $status = 1;
             $message = 'Berhasil merubah password.';
             $responseCode = Response::HTTP_OK;
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch(QueryException $e) {
+        } catch (QueryException $e) {
             DB::rollBack();
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
@@ -322,12 +328,13 @@ class KaryawanController extends Controller
         }
     }
 
-    public function biodata($id) {
+    public function biodata($id)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
         $data = null;
-        
+
         try {
             $responseCode = Response::HTTP_OK;
             $status = 1;
@@ -335,123 +342,123 @@ class KaryawanController extends Controller
             $karyawan = DB::table('mst_karyawan')
                 ->where('nip', $id)
                 ->first();
-            if($karyawan == null){
+            if ($karyawan == null) {
                 $status = 0;
                 $message = 'Karyawan tidak ditemukan.';
             } else {
                 $karyawan = DB::table('mst_karyawan')
-                        ->where('nip', $id)
-                        ->leftJoin('mst_cabang', 'mst_cabang.kd_cabang', 'mst_karyawan.kd_entitas')
-                        ->leftJoin('mst_bagian', 'mst_bagian.kd_bagian', 'mst_karyawan.kd_bagian')
-                        ->leftJoin('mst_pangkat_golongan', 'mst_pangkat_golongan.golongan', 'mst_karyawan.kd_panggol')
-                        ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
-                        ->leftJoin('mst_agama', 'mst_agama.kd_agama', 'mst_karyawan.kd_agama')
-                        ->select(
-                            'mst_karyawan.*',
-                            'mst_jabatan.nama_jabatan',
-                            'mst_bagian.nama_bagian',
-                            'mst_cabang.nama_cabang',
-                            'mst_pangkat_golongan.pangkat',
-                            'mst_pangkat_golongan.golongan',
-                            'mst_agama.agama',
-                        )
-                        ->first();
-                        
-                    $dataKaryawan = new stdClass;
-                    $returnData = new stdClass;
-                    $biodata = new stdClass;
-                    $norek = new stdClass;
-                    $dataJabatan = new stdClass;
-                    $mulaKerja = Carbon::create($karyawan->tanggal_pengangkat);
-                    $waktuSekarang = Carbon::now();
-                    $hitung = $waktuSekarang->diff($mulaKerja);
-                    $tahunKerja = (int) $hitung->format('%y'); 
-                    $bulanKerja = (int) $hitung->format('%m'); 
-                    $masaKerja = $hitung->format('%y Tahun, %m Bulan');
-                    $tanggalLahir = Carbon::create($karyawan->tgl_lahir);
-                    $hitung = $waktuSekarang->diff($tanggalLahir);
-                    $umur = $hitung->format('%y Tahun | %m Bulan | %d Hari');
+                    ->where('nip', $id)
+                    ->leftJoin('mst_cabang', 'mst_cabang.kd_cabang', 'mst_karyawan.kd_entitas')
+                    ->leftJoin('mst_bagian', 'mst_bagian.kd_bagian', 'mst_karyawan.kd_bagian')
+                    ->leftJoin('mst_pangkat_golongan', 'mst_pangkat_golongan.golongan', 'mst_karyawan.kd_panggol')
+                    ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
+                    ->leftJoin('mst_agama', 'mst_agama.kd_agama', 'mst_karyawan.kd_agama')
+                    ->select(
+                        'mst_karyawan.*',
+                        'mst_jabatan.nama_jabatan',
+                        'mst_bagian.nama_bagian',
+                        'mst_cabang.nama_cabang',
+                        'mst_pangkat_golongan.pangkat',
+                        'mst_pangkat_golongan.golongan',
+                        'mst_agama.agama',
+                    )
+                    ->first();
 
-                    // Biodata diri
-                    $biodata->nip = $karyawan->nip;
-                    $biodata->nik = $karyawan->nik;
-                    $biodata->nama_karyawan = $karyawan->nama_karyawan;
-                    $biodata->ttl = $karyawan->tmp_lahir . ', ' . date('d F Y', strtotime($karyawan->tgl_lahir));
-                    $biodata->umur = $umur;
-                    $biodata->agama = $karyawan->agama;
-                    $biodata->status_pernikahan = $karyawan->status_ptkp;
-                    $biodata->kewarganegaraan = $karyawan->kewarganegaraan;
-                    $biodata->alamat_ktp = $karyawan->alamat_ktp;
-                    $biodata->alamat_sek = $karyawan->alamat_sek;
-                    $biodata->jenis_kelamin = $karyawan->jk;
-                    // End biodata diri
+                $dataKaryawan = new stdClass;
+                $returnData = new stdClass;
+                $biodata = new stdClass;
+                $norek = new stdClass;
+                $dataJabatan = new stdClass;
+                $mulaKerja = Carbon::create($karyawan->tanggal_pengangkat);
+                $waktuSekarang = Carbon::now();
+                $hitung = $waktuSekarang->diff($mulaKerja);
+                $tahunKerja = (int) $hitung->format('%y');
+                $bulanKerja = (int) $hitung->format('%m');
+                $masaKerja = $hitung->format('%y Tahun, %m Bulan');
+                $tanggalLahir = Carbon::create($karyawan->tgl_lahir);
+                $hitung = $waktuSekarang->diff($tanggalLahir);
+                $umur = $hitung->format('%y Tahun | %m Bulan | %d Hari');
 
-                    // Norek & NPWP
-                    $norek->no_rek = $karyawan->no_rekening;
-                    $norek->npwp = $karyawan->npwp;
-                    // End Norek & NPWP
+                // Biodata diri
+                $biodata->nip = $karyawan->nip;
+                $biodata->nik = $karyawan->nik;
+                $biodata->nama_karyawan = $karyawan->nama_karyawan;
+                $biodata->ttl = $karyawan->tmp_lahir . ', ' . date('d F Y', strtotime($karyawan->tgl_lahir));
+                $biodata->umur = $umur;
+                $biodata->agama = $karyawan->agama;
+                $biodata->status_pernikahan = $karyawan->status_ptkp;
+                $biodata->kewarganegaraan = $karyawan->kewarganegaraan;
+                $biodata->alamat_ktp = $karyawan->alamat_ktp;
+                $biodata->alamat_sek = $karyawan->alamat_sek;
+                $biodata->jenis_kelamin = $karyawan->jk;
+                // End biodata diri
 
-                    // Data Jabatan
-                    $dataJabatan->tanggal_bergabung = Carbon::parse($karyawan->tanggal_pengangkat)->translatedFormat('d F Y');
-                    $dataJabatan->lama_kerja = $masaKerja;
-                    $dataJabatan->pangkat = $karyawan->pangkat;
-                    $dataJabatan->golongan = $karyawan->golongan;
-                    $dataJabatan->status_karyawan = $karyawan->status_karyawan;
-                    $dataJabatan->status_jabatan = $karyawan->status_jabatan;
-                    $dataJabatan->keterangan_jabatan = $karyawan->ket_jabatan;
-                    $dataJabatan->tanggal_mulai = date('d F Y', strtotime($karyawan->tgl_mulai));
-                    $dataJabatan->pendidikan_terakhir = $karyawan->pendidikan;
-                    $dataJabatan->pendidikan_major = $karyawan->pendidikan_major;
-                    $dataJabatan->sk_pengangkatan = $karyawan->skangkat;
-                    $dataJabatan->tanggal_pengangkatan = $karyawan->tanggal_pengangkat;
-                    $dataKaryawan->entitas = $this->getEntity($karyawan->kd_entitas);
-                    $prefix = match ($karyawan->status_jabatan) {
-                        'Penjabat' => 'Pj. ',
-                        'Penjabat Sementara' => 'Pjs. ',
-                        default => '',
-                    };
-                    
-                    $jabatan = '';
-                    if ($karyawan->nama_jabatan) {
-                        $jabatan = $karyawan->nama_jabatan;
-                    } else {
-                        $jabatan = 'undifined';
-                    }
-                    
-                    $ket = $karyawan->ket_jabatan ? "({$karyawan->ket_jabatan})" : '';
-                    
-                    if ($karyawan->nama_bagian != null && $dataKaryawan->entitas->type == 1){
-                        $entitas = '';
-                    } else if (isset($dataKaryawan->entitas->subDiv)) {
-                        $entitas = $dataKaryawan->entitas->subDiv->nama_subdivisi;
-                    } elseif (isset($dataKaryawan->entitas->div)) {
-                        $entitas = $dataKaryawan->entitas->div->nama_divisi;
-                    } else {
-                        $entitas = '';
-                    }
-                    
-                    if ($jabatan == 'Pemimpin Sub Divisi') {
-                        $jabatan = 'PSD';
-                    } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
-                        $jabatan = 'PBO';
-                    } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
-                        $jabatan = 'PBP';
-                    } else {
-                        $jabatan = $karyawan?->nama_jabatan ? $karyawan?->nama_jabatan : 'undifined';
-                    }
-        
-                    $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $karyawan?->nama_bagian . ' ' . $ket . ($karyawan->nama_cabang != null ? ' Cabang ' . $karyawan->nama_cabang : ' (Pusat)');
-                    $dataJabatan->display_jabatan = $display_jabatan;
+                // Norek & NPWP
+                $norek->no_rek = $karyawan->no_rekening;
+                $norek->npwp = $karyawan->npwp;
+                // End Norek & NPWP
 
-                    $returnData->biodata = $biodata;
-                    $returnData->norek_npwp = $norek;
-                    $returnData->data_jabatan = $dataJabatan;
-                    $data = $returnData;
+                // Data Jabatan
+                $dataJabatan->tanggal_bergabung = Carbon::parse($karyawan->tanggal_pengangkat)->translatedFormat('d F Y');
+                $dataJabatan->lama_kerja = $masaKerja;
+                $dataJabatan->pangkat = $karyawan->pangkat;
+                $dataJabatan->golongan = $karyawan->golongan;
+                $dataJabatan->status_karyawan = $karyawan->status_karyawan;
+                $dataJabatan->status_jabatan = $karyawan->status_jabatan;
+                $dataJabatan->keterangan_jabatan = $karyawan->ket_jabatan;
+                $dataJabatan->tanggal_mulai = date('d F Y', strtotime($karyawan->tgl_mulai));
+                $dataJabatan->pendidikan_terakhir = $karyawan->pendidikan;
+                $dataJabatan->pendidikan_major = $karyawan->pendidikan_major;
+                $dataJabatan->sk_pengangkatan = $karyawan->skangkat;
+                $dataJabatan->tanggal_pengangkatan = $karyawan->tanggal_pengangkat;
+                $dataKaryawan->entitas = $this->getEntity($karyawan->kd_entitas);
+                $prefix = match ($karyawan->status_jabatan) {
+                    'Penjabat' => 'Pj. ',
+                    'Penjabat Sementara' => 'Pjs. ',
+                    default => '',
+                };
+
+                $jabatan = '';
+                if ($karyawan->nama_jabatan) {
+                    $jabatan = $karyawan->nama_jabatan;
+                } else {
+                    $jabatan = 'undifined';
+                }
+
+                $ket = $karyawan->ket_jabatan ? "({$karyawan->ket_jabatan})" : '';
+
+                if ($karyawan->nama_bagian != null && $dataKaryawan->entitas->type == 1) {
+                    $entitas = '';
+                } else if (isset($dataKaryawan->entitas->subDiv)) {
+                    $entitas = $dataKaryawan->entitas->subDiv->nama_subdivisi;
+                } elseif (isset($dataKaryawan->entitas->div)) {
+                    $entitas = $dataKaryawan->entitas->div->nama_divisi;
+                } else {
+                    $entitas = '';
+                }
+
+                if ($jabatan == 'Pemimpin Sub Divisi') {
+                    $jabatan = 'PSD';
+                } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
+                    $jabatan = 'PBO';
+                } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
+                    $jabatan = 'PBP';
+                } else {
+                    $jabatan = $karyawan?->nama_jabatan ? $karyawan?->nama_jabatan : 'undifined';
+                }
+
+                $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $karyawan?->nama_bagian . ' ' . $ket . ($karyawan->nama_cabang != null ? ' Cabang ' . $karyawan->nama_cabang : ' (Pusat)');
+                $dataJabatan->display_jabatan = $display_jabatan;
+
+                $returnData->biodata = $biodata;
+                $returnData->norek_npwp = $norek;
+                $returnData->data_jabatan = $dataJabatan;
+                $data = $returnData;
             }
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch(QueryException $e) {
+        } catch (QueryException $e) {
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
         } finally {
@@ -465,7 +472,8 @@ class KaryawanController extends Controller
         }
     }
 
-    public function listKaryawan(Request $request){
+    public function listKaryawan(Request $request)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
@@ -481,11 +489,44 @@ class KaryawanController extends Controller
 
             $repo = new KaryawanRepository();
             $data = $repo->getAllKaryawan($search, $limit, $page);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch(QueryException $e) {
+        } catch (QueryException $e) {
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } finally {
+            $response = [
+                'status' => $status,
+                'message' => $message,
+                'data' => $data
+            ];
+
+            return response()->json($response, $responseCode);
+        }
+    }
+    public function searchKaryawan(Request $request)
+    {
+        $status = 0;
+        $message = '';
+        $responseCode = Response::HTTP_UNAUTHORIZED;
+        $data = null;
+
+        try {
+            $message = 'Berhasil menampilkan karyawan.';
+            $responseCode = Response::HTTP_OK;
+            $status = 1;
+            $search = $request->get('search') ?? null;
+
+            $repo = new KaryawanRepository();
+            $data = $repo->searchGetCKaryawan($search);
+        } catch (Exception $e) {
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } catch (QueryException $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
@@ -500,7 +541,8 @@ class KaryawanController extends Controller
         }
     }
 
-    public function detailKaryawan($id){
+    public function detailKaryawan($id)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
@@ -510,14 +552,14 @@ class KaryawanController extends Controller
             $message = 'Berhasil menampilkan detail karyawan.';
             $responseCode = Response::HTTP_OK;
             $status = 1;
-            
+
             $repo = new KaryawanRepository();
             $data = $repo->getDetailKaryawan($id);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch(QueryException $e) {
+        } catch (QueryException $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
@@ -532,7 +574,8 @@ class KaryawanController extends Controller
         }
     }
 
-    public function listDataPensiun(Request $request){
+    public function listDataPensiun(Request $request)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
@@ -542,14 +585,14 @@ class KaryawanController extends Controller
             $message = 'Berhasil menampilkan detail masa pensiun.';
             $responseCode = Response::HTTP_OK;
             $status = 1;
-            
+
             $repo = new KaryawanRepository();
             $data = $repo->getDataPensiun($request->all());
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch(QueryException $e) {
+        } catch (QueryException $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
@@ -564,7 +607,8 @@ class KaryawanController extends Controller
         }
     }
 
-    public function listPengkinianData(Request $request) {
+    public function listPengkinianData(Request $request)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
@@ -580,11 +624,11 @@ class KaryawanController extends Controller
             $page = $request->get('page') ?? 1;
             $repo = new KaryawanRepository;
             $data = $repo->listPengkinianData($limit, $search);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch(QueryException $e) {
+        } catch (QueryException $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
@@ -599,7 +643,8 @@ class KaryawanController extends Controller
         }
     }
 
-    public function detailPengkinianData($id) {
+    public function detailPengkinianData($id)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
@@ -609,7 +654,7 @@ class KaryawanController extends Controller
             $status = 1;
             $message = 'Berhasil menampilkan detail pengkinian data';
             $responseCode = Response::HTTP_OK;
-            
+
             $repo = new KaryawanRepository;
             $data = $repo->detailPengkinianData($id);
         } catch (Exception $e) {
