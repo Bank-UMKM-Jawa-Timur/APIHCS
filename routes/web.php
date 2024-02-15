@@ -47,6 +47,7 @@ $router->group(['prefix' => 'pergerakan-karir'], function () use ($router) {
     $router->get('/mutasi', 'KaryawanController@listMutasi');
     $router->get('/promosi', 'KaryawanController@listPromosi');
     $router->get('/demosi', 'KaryawanController@listDemosi');
+    $router->get('/penonaktifan', 'KaryawanController@listPenonaktifan');
 });
 
 $router->get('/cabang', 'CabangController@showCabang');
