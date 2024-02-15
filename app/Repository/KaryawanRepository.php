@@ -122,7 +122,7 @@ class KaryawanRepository
             ->orderByRaw($this->orderRaw)
             ->orderBy('kd_cabang', 'asc')
             ->orderBy('kd_entitas', 'asc')
-            ->paginate($limit);
+            ->simplePaginate($limit);
 
         $this->karyawanController->addEntity($data);
         foreach ($data as $value) {
@@ -164,7 +164,7 @@ class KaryawanRepository
             $value->display_jabatan = $display_jabatan;
         }
 
-        return $data;
+        return $data->items();
     }
 
     public function getDetailKaryawan($id)
