@@ -720,4 +720,344 @@ class KaryawanRepository
         unset($karyawan->entitas);
         return $karyawan;
     }
+
+    public function listMutasi($search = '', $limit = 10) {
+        $returnData = [];
+        $data = DB::table('demosi_promosi_pangkat')
+            ->where('keterangan', 'Mutasi')
+            ->select(
+                'demosi_promosi_pangkat.*',
+                'karyawan.*',
+                'newPos.nama_jabatan as jabatan_baru',
+                'oldPos.nama_jabatan as jabatan_lama',
+                DB::raw("
+                    IF((cabang_lama.nama_cabang != 'NULL' AND IFNULL(div_lama.nama_divisi, '-') = '-' AND IFNULL(sub_div_lama.nama_subdivisi, '-') = '-'),
+                        CONCAT('Cab.', cabang_lama.nama_cabang),
+                        IF((IFNULL(div_lama.nama_divisi, '-') != '-' AND IFNULL(sub_div_lama.nama_subdivisi, '-') = '-'), CONCAT(div_lama.nama_divisi, ' (Pusat)'),
+                            IF(IFNULL(sub_div_lama.nama_subdivisi, '-') != '-', CONCAT(sub_div_lama.nama_subdivisi, ' (Pusat)'), 
+                            IF(IFNULL(bagian_lama.nama_bagian, '-') != '-', CONCAT(bagian_lama.nama_bagian, ' (Pusat)'), '-'))
+                        )
+                    ) AS kantor_lama
+                "),
+                DB::raw("
+                    IF((cabang_baru.nama_cabang != 'NULL' AND IFNULL(div_baru.nama_divisi, '-') = '-' AND IFNULL(sub_div_baru.nama_subdivisi, '-') = '-'),
+                        CONCAT('Cab.', cabang_baru.nama_cabang),
+                        IF((IFNULL(div_baru.nama_divisi, '-') != '-' AND IFNULL(sub_div_baru.nama_subdivisi, '-') = '-'), CONCAT(div_baru.nama_divisi, ' (Pusat)'),
+                            IF(IFNULL(sub_div_baru.nama_subdivisi, '-') != '-', CONCAT(sub_div_baru.nama_subdivisi, ' (Pusat)'), 
+                            IF(IFNULL(bagian_baru.nama_bagian, '-') != '-', CONCAT(bagian_baru.nama_bagian, ' (Pusat)'), '-'))
+                        )
+                    ) AS kantor_baru
+                ")
+            )
+            ->join('mst_karyawan as karyawan', function($join) {
+                $join->on('karyawan.nip', 'demosi_promosi_pangkat.nip')
+                    ->orOn('karyawan.nip', 'demosi_promosi_pangkat.nip_baru');
+            })
+            ->join('mst_jabatan as newPos', 'newPos.kd_jabatan', 'demosi_promosi_pangkat.kd_jabatan_baru')
+            ->join('mst_jabatan as oldPos', 'oldPos.kd_jabatan', 'demosi_promosi_pangkat.kd_jabatan_lama')
+            // Kantor lama
+            ->leftJoin('mst_divisi as div_lama', 'div_lama.kd_divisi', 'demosi_promosi_pangkat.kd_entitas_lama')
+            ->leftJoin('mst_sub_divisi as sub_div_lama', 'sub_div_lama.kd_subdiv', 'demosi_promosi_pangkat.kd_entitas_lama')
+            ->leftJoin('mst_cabang as cabang_lama', 'cabang_lama.kd_cabang', 'demosi_promosi_pangkat.kd_entitas_lama')
+            ->leftJoin('mst_bagian as bagian_lama', 'bagian_lama.kd_bagian', 'demosi_promosi_pangkat.kd_bagian_lama')
+            // Kantor Baru
+            ->leftJoin('mst_divisi as div_baru', 'div_baru.kd_divisi', 'demosi_promosi_pangkat.kd_entitas_baru')
+            ->leftJoin('mst_sub_divisi as sub_div_baru', 'sub_div_baru.kd_subdiv', 'demosi_promosi_pangkat.kd_entitas_baru')
+            ->leftJoin('mst_cabang as cabang_baru', 'cabang_baru.kd_cabang', 'demosi_promosi_pangkat.kd_entitas_baru')
+            ->leftJoin('mst_bagian as bagian_baru', 'bagian_baru.kd_bagian', 'demosi_promosi_pangkat.kd_bagian')
+            ->when($search, function($query) use ($search) {
+                $query->where('karyawan.nip', 'LIKE', "%$search%")
+                    ->orWhere('karyawan.nama_karyawan', 'LIKE', "%$search%")
+                    ->orWhereDate('demosi_promosi_pangkat.tanggal_pengesahan', $search)
+                    ->orWhere('newPos.nama_jabatan',  'LIKE', "%$search%")
+                    ->orWhere('oldPos.nama_jabatan',  'LIKE', "%$search%")
+                    ->orWhere('div_lama.nama_divisi',  'LIKE', "%$search%")
+                    ->orWhere('sub_div_lama.nama_subdivisi',  'LIKE', "%$search%")
+                    ->orWhere('cabang_lama.nama_cabang',  'LIKE', "%$search%")
+                    ->orWhere('div_baru.nama_divisi',  'LIKE', "%$search%")
+                    ->orWhere('sub_div_baru.nama_subdivisi',  'LIKE', "%$search%")
+                    ->orWhere('cabang_baru.nama_cabang',  'LIKE', "%$search%")
+                    ->orWhere('demosi_promosi_pangkat.bukti_sk',  'LIKE', "%$search%");
+            })
+            ->orderBy('tanggal_pengesahan', 'desc')
+            ->paginate($limit);
+        foreach($data as $key => $value) {
+            $karyawan = new stdClass;
+            $karyawan->nip = $value->nip;
+            $karyawan->nama_karyawan = $value->nama_karyawan;
+            $karyawan->tanggal_pengesahan = date('d F Y', strtotime($value->tanggal_pengesahan));
+            $karyawan->jabatan_lama = ($value->status_jabatan_lama != null ? $value->status_jabatan_lama . ' - ' : ' ') . ($value->jabatan_lama);
+            $karyawan->jabatan_baru = ($value->status_jabatan_baru != null ? $value->status_jabatan_baru . ' - ' : ' ') . ($value->jabatan_baru);
+            $karyawan->kantor_lama = $value->kantor_lama;
+            $karyawan->kantor_baru = $value->kantor_baru;
+            $karyawan->bukti_sk = $value->bukti_sk;
+            array_push($returnData, $karyawan);
+        }
+        return $returnData;
+    }
+
+    public function listPromosi($search = '', $limit = 10) {
+        $returnData = [];
+        $data = DB::table('demosi_promosi_pangkat')
+            ->where('keterangan', 'Promosi')
+            ->select(
+                'demosi_promosi_pangkat.*',
+                'karyawan.*',
+                'newPos.nama_jabatan as jabatan_baru',
+                'oldPos.nama_jabatan as jabatan_lama',
+                DB::raw("
+                    IF((cabang_lama.nama_cabang != 'NULL' AND IFNULL(div_lama.nama_divisi, '-') = '-' AND IFNULL(sub_div_lama.nama_subdivisi, '-') = '-'),
+                        CONCAT('Cab.', cabang_lama.nama_cabang),
+                        IF((IFNULL(div_lama.nama_divisi, '-') != '-' AND IFNULL(sub_div_lama.nama_subdivisi, '-') = '-'), CONCAT(div_lama.nama_divisi, ' (Pusat)'),
+                            IF(IFNULL(sub_div_lama.nama_subdivisi, '-') != '-', CONCAT(sub_div_lama.nama_subdivisi, ' (Pusat)'), 
+                            IF(IFNULL(bagian_lama.nama_bagian, '-') != '-', CONCAT(bagian_lama.nama_bagian, ' (Pusat)'), '-'))
+                        )
+                    ) AS kantor_lama
+                "),
+                DB::raw("
+                    IF((cabang_baru.nama_cabang != 'NULL' AND IFNULL(div_baru.nama_divisi, '-') = '-' AND IFNULL(sub_div_baru.nama_subdivisi, '-') = '-'),
+                        CONCAT('Cab.', cabang_baru.nama_cabang),
+                        IF((IFNULL(div_baru.nama_divisi, '-') != '-' AND IFNULL(sub_div_baru.nama_subdivisi, '-') = '-'), CONCAT(div_baru.nama_divisi, ' (Pusat)'),
+                            IF(IFNULL(sub_div_baru.nama_subdivisi, '-') != '-', CONCAT(sub_div_baru.nama_subdivisi, ' (Pusat)'), 
+                            IF(IFNULL(bagian_baru.nama_bagian, '-') != '-', CONCAT(bagian_baru.nama_bagian, ' (Pusat)'), '-'))
+                        )
+                    ) AS kantor_baru
+                ")
+            )
+            ->join('mst_karyawan as karyawan', function($join) {
+                $join->on('karyawan.nip', 'demosi_promosi_pangkat.nip')
+                    ->orOn('karyawan.nip', 'demosi_promosi_pangkat.nip_baru');
+            })
+            ->join('mst_jabatan as newPos', 'newPos.kd_jabatan', 'demosi_promosi_pangkat.kd_jabatan_baru')
+            ->join('mst_jabatan as oldPos', 'oldPos.kd_jabatan', 'demosi_promosi_pangkat.kd_jabatan_lama')
+            // Kantor lama
+            ->leftJoin('mst_divisi as div_lama', 'div_lama.kd_divisi', 'demosi_promosi_pangkat.kd_entitas_lama')
+            ->leftJoin('mst_sub_divisi as sub_div_lama', 'sub_div_lama.kd_subdiv', 'demosi_promosi_pangkat.kd_entitas_lama')
+            ->leftJoin('mst_cabang as cabang_lama', 'cabang_lama.kd_cabang', 'demosi_promosi_pangkat.kd_entitas_lama')
+            ->leftJoin('mst_bagian as bagian_lama', 'bagian_lama.kd_bagian', 'demosi_promosi_pangkat.kd_bagian_lama')
+            // Kantor Baru
+            ->leftJoin('mst_divisi as div_baru', 'div_baru.kd_divisi', 'demosi_promosi_pangkat.kd_entitas_baru')
+            ->leftJoin('mst_sub_divisi as sub_div_baru', 'sub_div_baru.kd_subdiv', 'demosi_promosi_pangkat.kd_entitas_baru')
+            ->leftJoin('mst_cabang as cabang_baru', 'cabang_baru.kd_cabang', 'demosi_promosi_pangkat.kd_entitas_baru')
+            ->leftJoin('mst_bagian as bagian_baru', 'bagian_baru.kd_bagian', 'demosi_promosi_pangkat.kd_bagian')
+            ->when($search, function($query) use ($search) {
+                $query->where('karyawan.nip', 'LIKE', "%$search%")
+                    ->orWhere('karyawan.nama_karyawan', 'LIKE', "%$search%")
+                    ->orWhereDate('demosi_promosi_pangkat.tanggal_pengesahan', $search)
+                    ->orWhere('newPos.nama_jabatan',  'LIKE', "%$search%")
+                    ->orWhere('oldPos.nama_jabatan',  'LIKE', "%$search%")
+                    ->orWhere('div_lama.nama_divisi',  'LIKE', "%$search%")
+                    ->orWhere('sub_div_lama.nama_subdivisi',  'LIKE', "%$search%")
+                    ->orWhere('cabang_lama.nama_cabang',  'LIKE', "%$search%")
+                    ->orWhere('div_baru.nama_divisi',  'LIKE', "%$search%")
+                    ->orWhere('sub_div_baru.nama_subdivisi',  'LIKE', "%$search%")
+                    ->orWhere('cabang_baru.nama_cabang',  'LIKE', "%$search%")
+                    ->orWhere('demosi_promosi_pangkat.bukti_sk',  'LIKE', "%$search%");
+            })
+            ->orderBy('tanggal_pengesahan', 'desc')
+            ->paginate($limit);
+
+        foreach($data as $key => $value) {
+            $karyawan = new stdClass;
+            $karyawan->nip = $value->nip;
+            $karyawan->nama_karyawan = $value->nama_karyawan;
+            $karyawan->tanggal_pengesahan = date('d F Y', strtotime($value->tanggal_pengesahan));
+            $karyawan->jabatan_lama = ($value->status_jabatan_lama != null ? $value->status_jabatan_lama . ' - ' : ' ') . ($value->jabatan_lama);
+            $karyawan->jabatan_baru = ($value->status_jabatan_baru != null ? $value->status_jabatan_baru . ' - ' : ' ') . ($value->jabatan_baru);
+            $karyawan->kantor_lama = $value->kantor_lama;
+            $karyawan->kantor_baru = $value->kantor_baru;
+            $karyawan->bukti_sk = $value->bukti_sk;
+            array_push($returnData, $karyawan);
+        }
+        return $returnData;
+    }
+
+    public function listDemosi($search = '', $limit = 10) {
+        $returnData = [];
+        $data = DB::table('demosi_promosi_pangkat')
+            ->where('keterangan', 'Demosi')
+            ->select(
+                'demosi_promosi_pangkat.*',
+                'karyawan.*',
+                'newPos.nama_jabatan as jabatan_baru',
+                'oldPos.nama_jabatan as jabatan_lama',
+                DB::raw("
+                    IF((cabang_lama.nama_cabang != 'NULL' AND IFNULL(div_lama.nama_divisi, '-') = '-' AND IFNULL(sub_div_lama.nama_subdivisi, '-') = '-'),
+                        CONCAT('Cab.', cabang_lama.nama_cabang),
+                        IF((IFNULL(div_lama.nama_divisi, '-') != '-' AND IFNULL(sub_div_lama.nama_subdivisi, '-') = '-'), CONCAT(div_lama.nama_divisi, ' (Pusat)'),
+                            IF(IFNULL(sub_div_lama.nama_subdivisi, '-') != '-', CONCAT(sub_div_lama.nama_subdivisi, ' (Pusat)'), 
+                            IF(IFNULL(bagian_lama.nama_bagian, '-') != '-', CONCAT(bagian_lama.nama_bagian, ' (Pusat)'), '-'))
+                        )
+                    ) AS kantor_lama
+                "),
+                DB::raw("
+                    IF((cabang_baru.nama_cabang != 'NULL' AND IFNULL(div_baru.nama_divisi, '-') = '-' AND IFNULL(sub_div_baru.nama_subdivisi, '-') = '-'),
+                        CONCAT('Cab.', cabang_baru.nama_cabang),
+                        IF((IFNULL(div_baru.nama_divisi, '-') != '-' AND IFNULL(sub_div_baru.nama_subdivisi, '-') = '-'), CONCAT(div_baru.nama_divisi, ' (Pusat)'),
+                            IF(IFNULL(sub_div_baru.nama_subdivisi, '-') != '-', CONCAT(sub_div_baru.nama_subdivisi, ' (Pusat)'), 
+                            IF(IFNULL(bagian_baru.nama_bagian, '-') != '-', CONCAT(bagian_baru.nama_bagian, ' (Pusat)'), '-'))
+                        )
+                    ) AS kantor_baru
+                ")
+            )
+            ->join('mst_karyawan as karyawan', function($join) {
+                $join->on('karyawan.nip', 'demosi_promosi_pangkat.nip')
+                    ->orOn('karyawan.nip', 'demosi_promosi_pangkat.nip_baru');
+            })
+            ->join('mst_jabatan as newPos', 'newPos.kd_jabatan', 'demosi_promosi_pangkat.kd_jabatan_baru')
+            ->join('mst_jabatan as oldPos', 'oldPos.kd_jabatan', 'demosi_promosi_pangkat.kd_jabatan_lama')
+            // Kantor lama
+            ->leftJoin('mst_divisi as div_lama', 'div_lama.kd_divisi', 'demosi_promosi_pangkat.kd_entitas_lama')
+            ->leftJoin('mst_sub_divisi as sub_div_lama', 'sub_div_lama.kd_subdiv', 'demosi_promosi_pangkat.kd_entitas_lama')
+            ->leftJoin('mst_cabang as cabang_lama', 'cabang_lama.kd_cabang', 'demosi_promosi_pangkat.kd_entitas_lama')
+            ->leftJoin('mst_bagian as bagian_lama', 'bagian_lama.kd_bagian', 'demosi_promosi_pangkat.kd_bagian_lama')
+            // Kantor Baru
+            ->leftJoin('mst_divisi as div_baru', 'div_baru.kd_divisi', 'demosi_promosi_pangkat.kd_entitas_baru')
+            ->leftJoin('mst_sub_divisi as sub_div_baru', 'sub_div_baru.kd_subdiv', 'demosi_promosi_pangkat.kd_entitas_baru')
+            ->leftJoin('mst_cabang as cabang_baru', 'cabang_baru.kd_cabang', 'demosi_promosi_pangkat.kd_entitas_baru')
+            ->leftJoin('mst_bagian as bagian_baru', 'bagian_baru.kd_bagian', 'demosi_promosi_pangkat.kd_bagian')
+            ->when($search, function($query) use ($search) {
+                $query->where('karyawan.nip', 'LIKE', "%$search%")
+                    ->orWhere('karyawan.nama_karyawan', 'LIKE', "%$search%")
+                    ->orWhereDate('demosi_promosi_pangkat.tanggal_pengesahan', $search)
+                    ->orWhere('newPos.nama_jabatan',  'LIKE', "%$search%")
+                    ->orWhere('oldPos.nama_jabatan',  'LIKE', "%$search%")
+                    ->orWhere('div_lama.nama_divisi',  'LIKE', "%$search%")
+                    ->orWhere('sub_div_lama.nama_subdivisi',  'LIKE', "%$search%")
+                    ->orWhere('cabang_lama.nama_cabang',  'LIKE', "%$search%")
+                    ->orWhere('div_baru.nama_divisi',  'LIKE', "%$search%")
+                    ->orWhere('sub_div_baru.nama_subdivisi',  'LIKE', "%$search%")
+                    ->orWhere('cabang_baru.nama_cabang',  'LIKE', "%$search%")
+                    ->orWhere('demosi_promosi_pangkat.bukti_sk',  'LIKE', "%$search%");
+            })
+            ->orderBy('tanggal_pengesahan', 'desc')
+            ->paginate($limit);
+
+        foreach($data as $key => $value) {
+            $karyawan = new stdClass;
+            $karyawan->nip = $value->nip;
+            $karyawan->nama_karyawan = $value->nama_karyawan;
+            $karyawan->tanggal_pengesahan = date('d F Y', strtotime($value->tanggal_pengesahan));
+            $karyawan->jabatan_lama = ($value->status_jabatan_lama != null ? $value->status_jabatan_lama . ' - ' : ' ') . ($value->jabatan_lama);
+            $karyawan->jabatan_baru = ($value->status_jabatan_baru != null ? $value->status_jabatan_baru . ' - ' : ' ') . ($value->jabatan_baru);
+            $karyawan->kantor_lama = $value->kantor_lama;
+            $karyawan->kantor_baru = $value->kantor_baru;
+            $karyawan->bukti_sk = $value->bukti_sk;
+            array_push($returnData, $karyawan);
+        }
+        return $returnData;
+    }
+
+    public function listPenonaktifan($search = null, $limit = 10) {
+        $kd_cabang = DB::table('mst_cabang')
+            ->select('kd_cabang')
+            ->pluck('kd_cabang')
+            ->toArray();
+        $data = DB::table('mst_karyawan')
+            ->select(
+                'mst_karyawan.nip',
+                'mst_karyawan.nik',
+                'mst_karyawan.nama_karyawan',
+                'mst_karyawan.kd_bagian',
+                'mst_karyawan.kd_jabatan',
+                'mst_karyawan.kd_entitas',
+                'mst_karyawan.tanggal_penonaktifan',
+                'mst_karyawan.status_jabatan',
+                'mst_karyawan.ket_jabatan',
+                'mst_karyawan.kd_entitas',
+                'mst_karyawan.jk',
+                'mst_karyawan.tanggal_pengangkat',
+                'mst_karyawan.tgl_mulai',
+                'mst_karyawan.no_rekening',
+                'mst_karyawan.tanggal_penonaktifan',
+                'mst_karyawan.kategori_penonaktifan',
+                'mst_jabatan.nama_jabatan',
+                'mst_bagian.nama_bagian',
+                'mst_cabang.nama_cabang'
+            )
+            ->leftJoin('mst_cabang', 'kd_cabang', 'mst_karyawan.kd_entitas')
+            ->leftJoin('mst_bagian', 'mst_karyawan.kd_bagian', 'mst_bagian.kd_bagian')
+            ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
+            ->whereNotNull('tanggal_penonaktifan')
+            ->where(function ($query) use ($search, $kd_cabang) {
+                $query->where('mst_karyawan.nama_karyawan', 'like', "%$search%")
+                    ->orWhere('mst_karyawan.nip', 'like', "%$search%")
+                    ->orWhere('mst_karyawan.nik', 'like', "%$search%")
+                    ->orWhere('mst_karyawan.kd_bagian', 'like', "%$search%")
+                    ->orWhere('mst_karyawan.kd_jabatan', 'like', "%$search%")
+                    ->orWhere('mst_karyawan.kd_entitas', 'like', "%$search%")
+                    ->orWhere('mst_karyawan.status_jabatan', 'like', "%$search%")
+                    ->orWhere('mst_cabang.nama_cabang', 'like', "%$search%")
+                    ->orWhere(function($q2) use ($search, $kd_cabang) {
+                        if (str_contains($search, 'pusat')) {
+                            $q2->whereNotIn('mst_karyawan.kd_entitas', $kd_cabang)
+                            ->orWhereNull('mst_karyawan.kd_entitas');
+                        }
+                        else {
+                            $q2->where('mst_cabang.nama_cabang', 'like', "%$search%");
+                        }
+                    })
+                    ->orWhere('mst_karyawan.ket_jabatan', 'like', "%$search%");
+                    // ->orWhereHas('jabatan', function($query3) use ($search) {
+                    //     $query3->where("nama_jabatan", 'like', "%$search%");
+                    // })
+                    // ->orWhereHas('bagian', function($query3) use ($search) {
+                    //     $query3->where("nama_bagian", 'like', "%$search%");
+                    // })
+                    // ->orWhere(function($query2) use ($search) {
+                    //     $query2->orWhereHas('jabatan', function($query3) use ($search) {
+                    //         $query3->where("nama_jabatan", 'like', "%$search%")
+                    //             ->orWhereRaw("MATCH(nama_jabatan) AGAINST('$search')");
+                    //     })
+                    //     ->whereHas('bagian', function($query3) use ($search) {
+                    //         $query3->whereRaw("MATCH(nama_bagian) AGAINST('$search')")
+                    //             ->orWhereRaw("MATCH(nama_bagian) AGAINST('$search')");
+                    //     });
+                    // });
+            })
+            ->orderBy('tanggal_penonaktifan', 'desc')
+            ->paginate($limit);
+
+        foreach($data as $value) {
+            $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
+            $prefix = match ($value->status_jabatan) {
+                'Penjabat' => 'Pj. ',
+                'Penjabat Sementara' => 'Pjs. ',
+                default => '',
+            };
+            
+            $jabatan = '';
+            if ($value->nama_jabatan) {
+                $jabatan = $value->nama_jabatan;
+            } else {
+                $jabatan = 'undifined';
+            }
+            
+            $ket = $value->ket_jabatan ? "({$value->ket_jabatan})" : '';
+            
+            if (isset($value->entitas->subDiv)) {
+                $entitas = $value->entitas->subDiv->nama_subdivisi;
+            } elseif (isset($value->entitas->div)) {
+                $entitas = $value->entitas->div->nama_divisi;
+            } else {
+                $entitas = '';
+            }
+            
+            if ($jabatan == 'Pemimpin Sub Divisi') {
+                $jabatan = 'PSD';
+            } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
+                $jabatan = 'PBO';
+            } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
+                $jabatan = 'PBP';
+            } else {
+                $jabatan = $value->nama_jabatan ? $value->nama_jabatan : 'undifined';
+            }
+
+            unset($value->entitas);
+            $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $value?->nama_bagian . ' ' . $ket;
+            $value->display_jabatan = $display_jabatan;
+        }
+
+        return $data;
+    }
 }
