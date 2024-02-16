@@ -1119,4 +1119,29 @@ class KaryawanRepository
         }
         return $data->items();
     }
+
+    public function listSP($search = null, $limit = 10) {
+        $data = DB::table('surat_peringatan')
+            ->select(
+                'surat_peringatan.id',
+                'surat_peringatan.nip',
+                'surat_peringatan.tanggal_sp',
+                'surat_peringatan.no_sp',
+                'surat_peringatan.pelanggaran',
+                'surat_peringatan.sanksi',
+                'mst_karyawan.nama_karyawan',
+            )
+            ->join('mst_karyawan','surat_peringatan.nip','=','mst_karyawan.nip')
+            ->when($search, function ($query) use ($search) {
+                $query->where('surat_peringatan.nip', 'like', "%$search%")
+                ->orWhere('surat_peringatan.tanggal_sp', 'like', "%$search%")
+                ->orWhere('surat_peringatan.no_sp', 'like', "%$search%")
+                ->orWhere('surat_peringatan.pelanggaran', 'like', "%$search%")
+                ->orWhere('mst_karyawan.nama_karyawan', 'like', "%$search%");
+            })
+            ->orderBy('tanggal_sp', 'DESC')
+            ->simplePaginate($limit);
+
+        return $data->items();
+    }
 }
