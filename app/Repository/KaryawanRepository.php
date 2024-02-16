@@ -1019,7 +1019,7 @@ class KaryawanRepository
                 // });
             })
             ->orderBy('tanggal_penonaktifan', 'desc')
-            ->paginate($limit);
+            ->simplePaginate($limit);
 
         foreach ($data as $value) {
             $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
@@ -1061,7 +1061,7 @@ class KaryawanRepository
             $value->display_jabatan = $display_jabatan;
         }
 
-        return $data;
+        return $data->items();
     }
 
     public function listPJS($search = null, $limit = 10)
