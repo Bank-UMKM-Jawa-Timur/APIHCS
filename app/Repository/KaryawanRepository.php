@@ -609,7 +609,7 @@ class KaryawanRepository
                     ->orWhere('h.status_jabatan', 'like', "%$search%");
             })
             ->orderByRaw($orderRaw)
-            ->paginate($limit);
+            ->simplePaginate($limit);
         foreach ($data as $key => $value) {
             $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
             $prefix = match ($value->status_jabatan) {
@@ -651,7 +651,7 @@ class KaryawanRepository
             $value->kantor = $value->nama_cabang != null ? $value->nama_cabang : 'Pusat';
         }
 
-        return $data;
+        return $data->items();
     }
 
     public function detailPengkinianData($id)
@@ -721,7 +721,8 @@ class KaryawanRepository
         return $karyawan;
     }
 
-    public function listMutasi($search = '', $limit = 10) {
+    public function listMutasi($search = '', $limit = 10)
+    {
         $returnData = [];
         $data = DB::table('demosi_promosi_pangkat')
             ->where('keterangan', 'Mutasi')
@@ -749,7 +750,7 @@ class KaryawanRepository
                     ) AS kantor_baru
                 ")
             )
-            ->join('mst_karyawan as karyawan', function($join) {
+            ->join('mst_karyawan as karyawan', function ($join) {
                 $join->on('karyawan.nip', 'demosi_promosi_pangkat.nip')
                     ->orOn('karyawan.nip', 'demosi_promosi_pangkat.nip_baru');
             })
@@ -765,23 +766,23 @@ class KaryawanRepository
             ->leftJoin('mst_sub_divisi as sub_div_baru', 'sub_div_baru.kd_subdiv', 'demosi_promosi_pangkat.kd_entitas_baru')
             ->leftJoin('mst_cabang as cabang_baru', 'cabang_baru.kd_cabang', 'demosi_promosi_pangkat.kd_entitas_baru')
             ->leftJoin('mst_bagian as bagian_baru', 'bagian_baru.kd_bagian', 'demosi_promosi_pangkat.kd_bagian')
-            ->when($search, function($query) use ($search) {
+            ->when($search, function ($query) use ($search) {
                 $query->where('karyawan.nip', 'LIKE', "%$search%")
                     ->orWhere('karyawan.nama_karyawan', 'LIKE', "%$search%")
                     ->orWhereDate('demosi_promosi_pangkat.tanggal_pengesahan', $search)
-                    ->orWhere('newPos.nama_jabatan',  'LIKE', "%$search%")
-                    ->orWhere('oldPos.nama_jabatan',  'LIKE', "%$search%")
-                    ->orWhere('div_lama.nama_divisi',  'LIKE', "%$search%")
-                    ->orWhere('sub_div_lama.nama_subdivisi',  'LIKE', "%$search%")
-                    ->orWhere('cabang_lama.nama_cabang',  'LIKE', "%$search%")
-                    ->orWhere('div_baru.nama_divisi',  'LIKE', "%$search%")
-                    ->orWhere('sub_div_baru.nama_subdivisi',  'LIKE', "%$search%")
-                    ->orWhere('cabang_baru.nama_cabang',  'LIKE', "%$search%")
-                    ->orWhere('demosi_promosi_pangkat.bukti_sk',  'LIKE', "%$search%");
+                    ->orWhere('newPos.nama_jabatan', 'LIKE', "%$search%")
+                    ->orWhere('oldPos.nama_jabatan', 'LIKE', "%$search%")
+                    ->orWhere('div_lama.nama_divisi', 'LIKE', "%$search%")
+                    ->orWhere('sub_div_lama.nama_subdivisi', 'LIKE', "%$search%")
+                    ->orWhere('cabang_lama.nama_cabang', 'LIKE', "%$search%")
+                    ->orWhere('div_baru.nama_divisi', 'LIKE', "%$search%")
+                    ->orWhere('sub_div_baru.nama_subdivisi', 'LIKE', "%$search%")
+                    ->orWhere('cabang_baru.nama_cabang', 'LIKE', "%$search%")
+                    ->orWhere('demosi_promosi_pangkat.bukti_sk', 'LIKE', "%$search%");
             })
             ->orderBy('tanggal_pengesahan', 'desc')
             ->paginate($limit);
-        foreach($data as $key => $value) {
+        foreach ($data as $key => $value) {
             $karyawan = new stdClass;
             $karyawan->nip = $value->nip;
             $karyawan->nama_karyawan = $value->nama_karyawan;
@@ -796,7 +797,8 @@ class KaryawanRepository
         return $returnData;
     }
 
-    public function listPromosi($search = '', $limit = 10) {
+    public function listPromosi($search = '', $limit = 10)
+    {
         $returnData = [];
         $data = DB::table('demosi_promosi_pangkat')
             ->where('keterangan', 'Promosi')
@@ -824,7 +826,7 @@ class KaryawanRepository
                     ) AS kantor_baru
                 ")
             )
-            ->join('mst_karyawan as karyawan', function($join) {
+            ->join('mst_karyawan as karyawan', function ($join) {
                 $join->on('karyawan.nip', 'demosi_promosi_pangkat.nip')
                     ->orOn('karyawan.nip', 'demosi_promosi_pangkat.nip_baru');
             })
@@ -840,24 +842,24 @@ class KaryawanRepository
             ->leftJoin('mst_sub_divisi as sub_div_baru', 'sub_div_baru.kd_subdiv', 'demosi_promosi_pangkat.kd_entitas_baru')
             ->leftJoin('mst_cabang as cabang_baru', 'cabang_baru.kd_cabang', 'demosi_promosi_pangkat.kd_entitas_baru')
             ->leftJoin('mst_bagian as bagian_baru', 'bagian_baru.kd_bagian', 'demosi_promosi_pangkat.kd_bagian')
-            ->when($search, function($query) use ($search) {
+            ->when($search, function ($query) use ($search) {
                 $query->where('karyawan.nip', 'LIKE', "%$search%")
                     ->orWhere('karyawan.nama_karyawan', 'LIKE', "%$search%")
                     ->orWhereDate('demosi_promosi_pangkat.tanggal_pengesahan', $search)
-                    ->orWhere('newPos.nama_jabatan',  'LIKE', "%$search%")
-                    ->orWhere('oldPos.nama_jabatan',  'LIKE', "%$search%")
-                    ->orWhere('div_lama.nama_divisi',  'LIKE', "%$search%")
-                    ->orWhere('sub_div_lama.nama_subdivisi',  'LIKE', "%$search%")
-                    ->orWhere('cabang_lama.nama_cabang',  'LIKE', "%$search%")
-                    ->orWhere('div_baru.nama_divisi',  'LIKE', "%$search%")
-                    ->orWhere('sub_div_baru.nama_subdivisi',  'LIKE', "%$search%")
-                    ->orWhere('cabang_baru.nama_cabang',  'LIKE', "%$search%")
-                    ->orWhere('demosi_promosi_pangkat.bukti_sk',  'LIKE', "%$search%");
+                    ->orWhere('newPos.nama_jabatan', 'LIKE', "%$search%")
+                    ->orWhere('oldPos.nama_jabatan', 'LIKE', "%$search%")
+                    ->orWhere('div_lama.nama_divisi', 'LIKE', "%$search%")
+                    ->orWhere('sub_div_lama.nama_subdivisi', 'LIKE', "%$search%")
+                    ->orWhere('cabang_lama.nama_cabang', 'LIKE', "%$search%")
+                    ->orWhere('div_baru.nama_divisi', 'LIKE', "%$search%")
+                    ->orWhere('sub_div_baru.nama_subdivisi', 'LIKE', "%$search%")
+                    ->orWhere('cabang_baru.nama_cabang', 'LIKE', "%$search%")
+                    ->orWhere('demosi_promosi_pangkat.bukti_sk', 'LIKE', "%$search%");
             })
             ->orderBy('tanggal_pengesahan', 'desc')
             ->paginate($limit);
 
-        foreach($data as $key => $value) {
+        foreach ($data as $key => $value) {
             $karyawan = new stdClass;
             $karyawan->nip = $value->nip;
             $karyawan->nama_karyawan = $value->nama_karyawan;
@@ -872,7 +874,8 @@ class KaryawanRepository
         return $returnData;
     }
 
-    public function listDemosi($search = '', $limit = 10) {
+    public function listDemosi($search = '', $limit = 10)
+    {
         $returnData = [];
         $data = DB::table('demosi_promosi_pangkat')
             ->where('keterangan', 'Demosi')
@@ -900,7 +903,7 @@ class KaryawanRepository
                     ) AS kantor_baru
                 ")
             )
-            ->join('mst_karyawan as karyawan', function($join) {
+            ->join('mst_karyawan as karyawan', function ($join) {
                 $join->on('karyawan.nip', 'demosi_promosi_pangkat.nip')
                     ->orOn('karyawan.nip', 'demosi_promosi_pangkat.nip_baru');
             })
@@ -916,24 +919,24 @@ class KaryawanRepository
             ->leftJoin('mst_sub_divisi as sub_div_baru', 'sub_div_baru.kd_subdiv', 'demosi_promosi_pangkat.kd_entitas_baru')
             ->leftJoin('mst_cabang as cabang_baru', 'cabang_baru.kd_cabang', 'demosi_promosi_pangkat.kd_entitas_baru')
             ->leftJoin('mst_bagian as bagian_baru', 'bagian_baru.kd_bagian', 'demosi_promosi_pangkat.kd_bagian')
-            ->when($search, function($query) use ($search) {
+            ->when($search, function ($query) use ($search) {
                 $query->where('karyawan.nip', 'LIKE', "%$search%")
                     ->orWhere('karyawan.nama_karyawan', 'LIKE', "%$search%")
                     ->orWhereDate('demosi_promosi_pangkat.tanggal_pengesahan', $search)
-                    ->orWhere('newPos.nama_jabatan',  'LIKE', "%$search%")
-                    ->orWhere('oldPos.nama_jabatan',  'LIKE', "%$search%")
-                    ->orWhere('div_lama.nama_divisi',  'LIKE', "%$search%")
-                    ->orWhere('sub_div_lama.nama_subdivisi',  'LIKE', "%$search%")
-                    ->orWhere('cabang_lama.nama_cabang',  'LIKE', "%$search%")
-                    ->orWhere('div_baru.nama_divisi',  'LIKE', "%$search%")
-                    ->orWhere('sub_div_baru.nama_subdivisi',  'LIKE', "%$search%")
-                    ->orWhere('cabang_baru.nama_cabang',  'LIKE', "%$search%")
-                    ->orWhere('demosi_promosi_pangkat.bukti_sk',  'LIKE', "%$search%");
+                    ->orWhere('newPos.nama_jabatan', 'LIKE', "%$search%")
+                    ->orWhere('oldPos.nama_jabatan', 'LIKE', "%$search%")
+                    ->orWhere('div_lama.nama_divisi', 'LIKE', "%$search%")
+                    ->orWhere('sub_div_lama.nama_subdivisi', 'LIKE', "%$search%")
+                    ->orWhere('cabang_lama.nama_cabang', 'LIKE', "%$search%")
+                    ->orWhere('div_baru.nama_divisi', 'LIKE', "%$search%")
+                    ->orWhere('sub_div_baru.nama_subdivisi', 'LIKE', "%$search%")
+                    ->orWhere('cabang_baru.nama_cabang', 'LIKE', "%$search%")
+                    ->orWhere('demosi_promosi_pangkat.bukti_sk', 'LIKE', "%$search%");
             })
             ->orderBy('tanggal_pengesahan', 'desc')
             ->paginate($limit);
 
-        foreach($data as $key => $value) {
+        foreach ($data as $key => $value) {
             $karyawan = new stdClass;
             $karyawan->nip = $value->nip;
             $karyawan->nama_karyawan = $value->nama_karyawan;
@@ -948,7 +951,8 @@ class KaryawanRepository
         return $returnData;
     }
 
-    public function listPenonaktifan($search = null, $limit = 10) {
+    public function listPenonaktifan($search = null, $limit = 10)
+    {
         $kd_cabang = DB::table('mst_cabang')
             ->select('kd_cabang')
             ->pluck('kd_cabang')
@@ -988,53 +992,52 @@ class KaryawanRepository
                     ->orWhere('mst_karyawan.kd_entitas', 'like', "%$search%")
                     ->orWhere('mst_karyawan.status_jabatan', 'like', "%$search%")
                     ->orWhere('mst_cabang.nama_cabang', 'like', "%$search%")
-                    ->orWhere(function($q2) use ($search, $kd_cabang) {
+                    ->orWhere(function ($q2) use ($search, $kd_cabang) {
                         if (str_contains($search, 'pusat')) {
                             $q2->whereNotIn('mst_karyawan.kd_entitas', $kd_cabang)
-                            ->orWhereNull('mst_karyawan.kd_entitas');
-                        }
-                        else {
+                                ->orWhereNull('mst_karyawan.kd_entitas');
+                        } else {
                             $q2->where('mst_cabang.nama_cabang', 'like', "%$search%");
                         }
                     })
                     ->orWhere('mst_karyawan.ket_jabatan', 'like', "%$search%");
-                    // ->orWhereHas('jabatan', function($query3) use ($search) {
-                    //     $query3->where("nama_jabatan", 'like', "%$search%");
-                    // })
-                    // ->orWhereHas('bagian', function($query3) use ($search) {
-                    //     $query3->where("nama_bagian", 'like', "%$search%");
-                    // })
-                    // ->orWhere(function($query2) use ($search) {
-                    //     $query2->orWhereHas('jabatan', function($query3) use ($search) {
-                    //         $query3->where("nama_jabatan", 'like', "%$search%")
-                    //             ->orWhereRaw("MATCH(nama_jabatan) AGAINST('$search')");
-                    //     })
-                    //     ->whereHas('bagian', function($query3) use ($search) {
-                    //         $query3->whereRaw("MATCH(nama_bagian) AGAINST('$search')")
-                    //             ->orWhereRaw("MATCH(nama_bagian) AGAINST('$search')");
-                    //     });
-                    // });
+                // ->orWhereHas('jabatan', function($query3) use ($search) {
+                //     $query3->where("nama_jabatan", 'like', "%$search%");
+                // })
+                // ->orWhereHas('bagian', function($query3) use ($search) {
+                //     $query3->where("nama_bagian", 'like', "%$search%");
+                // })
+                // ->orWhere(function($query2) use ($search) {
+                //     $query2->orWhereHas('jabatan', function($query3) use ($search) {
+                //         $query3->where("nama_jabatan", 'like', "%$search%")
+                //             ->orWhereRaw("MATCH(nama_jabatan) AGAINST('$search')");
+                //     })
+                //     ->whereHas('bagian', function($query3) use ($search) {
+                //         $query3->whereRaw("MATCH(nama_bagian) AGAINST('$search')")
+                //             ->orWhereRaw("MATCH(nama_bagian) AGAINST('$search')");
+                //     });
+                // });
             })
             ->orderBy('tanggal_penonaktifan', 'desc')
             ->paginate($limit);
 
-        foreach($data as $value) {
+        foreach ($data as $value) {
             $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
             $prefix = match ($value->status_jabatan) {
                 'Penjabat' => 'Pj. ',
                 'Penjabat Sementara' => 'Pjs. ',
                 default => '',
             };
-            
+
             $jabatan = '';
             if ($value->nama_jabatan) {
                 $jabatan = $value->nama_jabatan;
             } else {
                 $jabatan = 'undifined';
             }
-            
+
             $ket = $value->ket_jabatan ? "({$value->ket_jabatan})" : '';
-            
+
             if (isset($value->entitas->subDiv)) {
                 $entitas = $value->entitas->subDiv->nama_subdivisi;
             } elseif (isset($value->entitas->div)) {
@@ -1042,7 +1045,7 @@ class KaryawanRepository
             } else {
                 $entitas = '';
             }
-            
+
             if ($jabatan == 'Pemimpin Sub Divisi') {
                 $jabatan = 'PSD';
             } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
@@ -1061,7 +1064,8 @@ class KaryawanRepository
         return $data;
     }
 
-    public function listPJS($search = null, $limit = 10) {
+    public function listPJS($search = null, $limit = 10)
+    {
         $data = DB::table('pejabat_sementara')
             ->select(
                 'pejabat_sementara.id',
@@ -1073,28 +1077,28 @@ class KaryawanRepository
                 'mst_jabatan.kd_jabatan',
                 'mst_jabatan.nama_jabatan',
             )
-            ->join('mst_karyawan','pejabat_sementara.nip','=','mst_karyawan.nip')
-            ->join('mst_jabatan','pejabat_sementara.kd_jabatan','=','mst_jabatan.kd_jabatan')
+            ->join('mst_karyawan', 'pejabat_sementara.nip', '=', 'mst_karyawan.nip')
+            ->join('mst_jabatan', 'pejabat_sementara.kd_jabatan', '=', 'mst_jabatan.kd_jabatan')
             // ->with('karyawan')
             // ->with('jabatan')
             ->when($search, function ($query) use ($search) {
                 $query->where('pejabat_sementara.nip', 'like', "%$search%")
-                ->orWhere('pejabat_sementara.tanggal_mulai', 'like', "%$search%")
-                ->orWhere('pejabat_sementara.tanggal_berakhir', 'like', "%$search%")
-                ->orWhere('mst_karyawan.nama_karyawan', 'like', "%$search%")
-                ->orWhere('mst_jabatan.nama_jabatan', 'like', "%$search%");
+                    ->orWhere('pejabat_sementara.tanggal_mulai', 'like', "%$search%")
+                    ->orWhere('pejabat_sementara.tanggal_berakhir', 'like', "%$search%")
+                    ->orWhere('mst_karyawan.nama_karyawan', 'like', "%$search%")
+                    ->orWhere('mst_jabatan.nama_jabatan', 'like', "%$search%");
             })
             ->simplePaginate($limit);
-        foreach($data as $value) {
+        foreach ($data as $value) {
             $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
-            
+
             $jabatan = '';
             if ($value->nama_jabatan) {
                 $jabatan = $value->nama_jabatan;
             } else {
                 $jabatan = 'undifined';
             }
-            
+
             if (isset($value->entitas->subDiv)) {
                 $entitas = $value->entitas->subDiv->nama_subdivisi;
             } elseif (isset($value->entitas->div)) {
@@ -1102,7 +1106,7 @@ class KaryawanRepository
             } else {
                 $entitas = '';
             }
-            
+
             if ($jabatan == 'Pemimpin Sub Divisi') {
                 $jabatan = 'PSD';
             } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
@@ -1120,7 +1124,8 @@ class KaryawanRepository
         return $data->items();
     }
 
-    public function listSP($search = null, $limit = 10) {
+    public function listSP($search = null, $limit = 10)
+    {
         $data = DB::table('surat_peringatan')
             ->select(
                 'surat_peringatan.id',
@@ -1131,13 +1136,13 @@ class KaryawanRepository
                 'surat_peringatan.sanksi',
                 'mst_karyawan.nama_karyawan',
             )
-            ->join('mst_karyawan','surat_peringatan.nip','=','mst_karyawan.nip')
+            ->join('mst_karyawan', 'surat_peringatan.nip', '=', 'mst_karyawan.nip')
             ->when($search, function ($query) use ($search) {
                 $query->where('surat_peringatan.nip', 'like', "%$search%")
-                ->orWhere('surat_peringatan.tanggal_sp', 'like', "%$search%")
-                ->orWhere('surat_peringatan.no_sp', 'like', "%$search%")
-                ->orWhere('surat_peringatan.pelanggaran', 'like', "%$search%")
-                ->orWhere('mst_karyawan.nama_karyawan', 'like', "%$search%");
+                    ->orWhere('surat_peringatan.tanggal_sp', 'like', "%$search%")
+                    ->orWhere('surat_peringatan.no_sp', 'like', "%$search%")
+                    ->orWhere('surat_peringatan.pelanggaran', 'like', "%$search%")
+                    ->orWhere('mst_karyawan.nama_karyawan', 'like', "%$search%");
             })
             ->orderBy('tanggal_sp', 'DESC')
             ->simplePaginate($limit);
