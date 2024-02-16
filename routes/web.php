@@ -56,3 +56,4 @@ $router->get('/divisi', 'DivisiController@showDivisi');
 $router->get('/sub-divisi/{id}', 'SubdivisiController@showSubdivisi');
 $router->get('/bagian/{id}', 'BagianController@showBagian');
 $router->get('/dashboard', 'DashboardController@getDataDashboard');
+$router->get('/pjs', 'KaryawanController@listPJS');

@@ -1060,4 +1060,63 @@ class KaryawanRepository
 
         return $data;
     }
+
+    public function listPJS($search = null, $limit = 10) {
+        $data = DB::table('pejabat_sementara')
+            ->select(
+                'pejabat_sementara.id',
+                'pejabat_sementara.nip',
+                'pejabat_sementara.tanggal_mulai',
+                'pejabat_sementara.tanggal_berakhir',
+                'mst_karyawan.nama_karyawan',
+                'mst_karyawan.kd_entitas',
+                'mst_jabatan.kd_jabatan',
+                'mst_jabatan.nama_jabatan',
+            )
+            ->join('mst_karyawan','pejabat_sementara.nip','=','mst_karyawan.nip')
+            ->join('mst_jabatan','pejabat_sementara.kd_jabatan','=','mst_jabatan.kd_jabatan')
+            // ->with('karyawan')
+            // ->with('jabatan')
+            ->when($search, function ($query) use ($search) {
+                $query->where('pejabat_sementara.nip', 'like', "%$search%")
+                ->orWhere('pejabat_sementara.tanggal_mulai', 'like', "%$search%")
+                ->orWhere('pejabat_sementara.tanggal_berakhir', 'like', "%$search%")
+                ->orWhere('mst_karyawan.nama_karyawan', 'like', "%$search%")
+                ->orWhere('mst_jabatan.nama_jabatan', 'like', "%$search%");
+            })
+            ->simplePaginate($limit);
+        foreach($data as $value) {
+            $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
+            
+            $jabatan = '';
+            if ($value->nama_jabatan) {
+                $jabatan = $value->nama_jabatan;
+            } else {
+                $jabatan = 'undifined';
+            }
+            
+            if (isset($value->entitas->subDiv)) {
+                $entitas = $value->entitas->subDiv->nama_subdivisi;
+            } elseif (isset($value->entitas->div)) {
+                $entitas = $value->entitas->div->nama_divisi;
+            } else {
+                $entitas = '';
+            }
+            
+            if ($jabatan == 'Pemimpin Sub Divisi') {
+                $jabatan = 'PSD';
+            } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
+                $jabatan = 'PBO';
+            } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
+                $jabatan = 'PBP';
+            } else {
+                $jabatan = $value->nama_jabatan ? $value->nama_jabatan : 'undifined';
+            }
+
+            unset($value->entitas);
+            $display_jabatan = 'Pjs. ' . $jabatan . ' ' . $entitas;
+            $value->display_jabatan = $display_jabatan;
+        }
+        return $data->items();
+    }
 }
