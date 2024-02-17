@@ -17,38 +17,51 @@ $router->get('/', function () use ($router) {
     return $router->app->version();
 });
 
+// Auth
 $router->post('/login', 'KaryawanController@login');
 $router->post('/logout', 'KaryawanController@logout');
 
+// Slip Gaji
 $router->group(['prefix' => 'slip-gaji'], function () use ($router) {
     $router->get('/list', 'SlipGajiController@list');
     $router->get('/detail/{id}', 'SlipGajiController@detail');
 });
 
+// Change password
 $router->post('/change-password', 'KaryawanController@changePassword');
+// get biodata
 $router->get('/biodata/{id}', 'KaryawanController@biodata');
 
+// Karyawan
 $router->group(['prefix' => 'karyawan'], function () use ($router) {
     $router->get('/search', 'KaryawanController@searchKaryawan');
     $router->get('/', 'KaryawanController@listKaryawan');
     $router->get('/{id}', 'KaryawanController@detailKaryawan');
 });
 
+// Reminder Pensiun
 $router->group(['prefix' => 'reminder-pensiun'], function () use ($router) {
     $router->get('/', 'KaryawanController@listDataPensiun');
     $router->get('/{id}', 'KaryawanController@detailDataPensiun');
 });
 
+// Pengkinian data
 $router->group(['prefix' => 'pengkinian-data'], function () use ($router) {
     $router->get('/', 'KaryawanController@listPengkinianData');
     $router->get('/{id}', 'KaryawanController@detailPengkinianData');
 });
 
+// Pergerakan Karir
 $router->group(['prefix' => 'pergerakan-karir'], function () use ($router) {
     $router->get('/mutasi', 'KaryawanController@listMutasi');
     $router->get('/promosi', 'KaryawanController@listPromosi');
     $router->get('/demosi', 'KaryawanController@listDemosi');
     $router->get('/penonaktifan', 'KaryawanController@listPenonaktifan');
+});
+
+// History
+$router->group(['prefix' => 'history'], function () use ($router) {
+    $router->get('jabatan/{id}', 'HistoryController@getHistoryJabatan');
 });
 
 $router->get('/cabang', 'CabangController@showCabang');
