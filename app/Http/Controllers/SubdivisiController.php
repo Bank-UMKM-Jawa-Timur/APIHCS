@@ -28,6 +28,7 @@ class SubdivisiController extends Controller
         try {
             $status = 1;
             $message = 'Berhasil menampilkan data sub divisi.';
+            $responseCode = Response::HTTP_OK;
             $data = DB::table('mst_sub_divisi')
                 ->select(
                     'kd_subdiv',

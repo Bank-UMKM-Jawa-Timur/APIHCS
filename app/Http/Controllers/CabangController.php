@@ -28,6 +28,7 @@ class CabangController extends Controller
         try {
             $status = 1;
             $message = 'Berhasil menampilkan data kantor cabang.';
+            $responseCode = Response::HTTP_OK;
             $data = DB::table('mst_cabang')
                 ->where('kd_cabang', '!=', '000')
                 ->select(

@@ -28,6 +28,7 @@ class DivisiController extends Controller
         try {
             $status = 1;
             $message = 'Berhasil menampilkan data divisi.';
+            $responseCode = Response::HTTP_OK;
             $data = DB::table('mst_divisi')
                 ->select(
                     'kd_divisi',

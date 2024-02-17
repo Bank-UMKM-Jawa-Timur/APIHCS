@@ -28,6 +28,7 @@ class BagianController extends Controller
         try {
             $status = 1;
             $message = 'Berhasil menampilkan data bagian.';
+            $responseCode = Response::HTTP_OK;
             $data = DB::table('mst_bagian')
                 ->select(
                     'kd_bagian',
