@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Http\Controllers\KaryawanController;
 use DateTime;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use stdClass;
 
@@ -123,5 +124,124 @@ class HistoryRepository
             ]);
         }
         return $returnData;
+    }
+
+    public function getHistoryPJS(Request $request) {
+        $kategori = strtolower($request->get('kategori'));
+        if($kategori == 'aktif') {
+            $data = DB::table('pejabat_sementara as pjs')
+                ->join('mst_karyawan as m', 'm.nip', 'pjs.nip')
+                ->select(
+                    'm.nama_karyawan',
+                    'pjs.kd_entitas',
+                    'pjs.tanggal_mulai',
+                    'pjs.tanggal_berakhir',
+                    'pjs.no_sk',
+                    'mst_jabatan.nama_jabatan',
+                    'mst_bagian.nama_bagian',
+                    'mst_cabang.nama_cabang',
+                )
+                ->leftJoin('mst_cabang', 'kd_cabang', 'pjs.kd_entitas')
+                ->leftJoin('mst_bagian', 'pjs.kd_bagian', 'mst_bagian.kd_bagian')
+                ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'pjs.kd_jabatan')
+                ->whereNull('pjs.tanggal_berakhir')
+                ->orderBy('pjs.tanggal_mulai', 'desc')
+                ->simplePaginate(25);
+
+            foreach($data as $key => $value) {
+                $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
+
+                $jabatan = '';
+                if ($value->nama_jabatan) {
+                    $jabatan = $value->nama_jabatan;
+                } else {
+                    $jabatan = 'undifined';
+                }
+
+                if (isset($value->entitas->subDiv)) {
+                    $entitas = $value->entitas->subDiv->nama_subdivisi;
+                } elseif (isset($value->entitas->div)) {
+                    $entitas = $value->entitas->div->nama_divisi;
+                } else {
+                    $entitas = '';
+                }
+
+                if ($jabatan == 'Pemimpin Sub Divisi') {
+                    $jabatan = 'PSD';
+                } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
+                    $jabatan = 'PBO';
+                } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
+                    $jabatan = 'PBP';
+                } else {
+                    $jabatan = $value->nama_jabatan ? $value->nama_jabatan : 'undifined';
+                }
+                unset($value->entitas);
+                $display_jabatan = 'Pjs. ' . $jabatan . ' ' . $entitas . ' ' . $value?->nama_bagian;
+                $value->display_jabatan = $display_jabatan;
+                $value->status = 'Aktif';
+            }
+
+            return $data->items();
+        } else {
+            $nip = $request->get('nip');
+            $data = DB::table('pejabat_sementara as pjs')
+                ->join('mst_karyawan as m', 'm.nip', 'pjs.nip')
+                ->where('pjs.nip', $nip)
+                ->select(
+                    'm.nama_karyawan',
+                    'pjs.kd_entitas',
+                    'pjs.tanggal_mulai',
+                    'pjs.tanggal_berakhir',
+                    'pjs.no_sk',
+                    'mst_jabatan.nama_jabatan',
+                    'mst_bagian.nama_bagian',
+                    'mst_cabang.nama_cabang',
+                )
+                ->leftJoin('mst_cabang', 'kd_cabang', 'pjs.kd_entitas')
+                ->leftJoin('mst_bagian', 'pjs.kd_bagian', 'mst_bagian.kd_bagian')
+                ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'pjs.kd_jabatan')
+                ->orderBy('pjs.tanggal_mulai', 'desc')
+                ->simplePaginate(25);
+
+            foreach($data as $key => $value) {
+                $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
+
+                $jabatan = '';
+                if ($value->nama_jabatan) {
+                    $jabatan = $value->nama_jabatan;
+                } else {
+                    $jabatan = 'undifined';
+                }
+
+                if (isset($value->entitas->subDiv)) {
+                    $entitas = $value->entitas->subDiv->nama_subdivisi;
+                } elseif (isset($value->entitas->div)) {
+                    $entitas = $value->entitas->div->nama_divisi;
+                } elseif (isset($value->entitas->cab)) {
+                    $entitas = $value->entitas->cab->nama_cabang;
+                } else {
+                    $entitas = '';
+                }
+
+                if ($jabatan == 'Pemimpin Sub Divisi') {
+                    $jabatan = 'PSD';
+                } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
+                    $jabatan = 'PBO';
+                } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
+                    $jabatan = 'PBP';
+                } else {
+                    $jabatan = $value->nama_jabatan ? $value->nama_jabatan : 'undifined';
+                }
+                unset($value->entitas);
+                $display_jabatan = 'Pjs. ' . $jabatan . ' ' . $entitas . ' ' . $value?->nama_bagian;
+                $value->display_jabatan = $display_jabatan;
+                if($value->tanggal_berakhir != null)
+                    $value->status = 'Aktif';
+                else 
+                    $value->status = 'Nonaktif';
+            }
+
+            return $data->items();
+        }
     }
 }
