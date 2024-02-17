@@ -244,4 +244,120 @@ class HistoryRepository
             return $data->items();
         }
     }
+
+    public function getHistorySP(Request $request) {
+        $kategori = strtolower($request->get('kategori'));
+        $limit = $request->get('limit') ?? 10;
+        $search = $request->get('search') ?? null;
+
+        if($kategori == 'keseluruhan') {
+            $data = DB::table('surat_peringatan')
+                ->select(
+                    'surat_peringatan.id',
+                    'surat_peringatan.nip',
+                    'surat_peringatan.tanggal_sp',
+                    'surat_peringatan.no_sp',
+                    'surat_peringatan.pelanggaran',
+                    'surat_peringatan.sanksi',
+                    'mst_karyawan.nama_karyawan',
+                    'mst_karyawan.kd_entitas'
+                )
+                ->join('mst_karyawan', 'surat_peringatan.nip', '=', 'mst_karyawan.nip')
+                ->when($search, function ($query) use ($search) {
+                    $query->where('surat_peringatan.nip', 'like', "%$search%")
+                        ->orWhere('surat_peringatan.tanggal_sp', 'like', "%$search%")
+                        ->orWhere('surat_peringatan.no_sp', 'like', "%$search%")
+                        ->orWhere('surat_peringatan.pelanggaran', 'like', "%$search%")
+                        ->orWhere('mst_karyawan.nama_karyawan', 'like', "%$search%");
+                })
+                ->orderBy('tanggal_sp', 'DESC')
+                ->simplePaginate($limit);
+        } else if($kategori == 'karyawan') {
+            $nip = $request->get('nip');
+            $data = DB::table('surat_peringatan')
+                ->select(
+                    'surat_peringatan.id',
+                    'surat_peringatan.nip',
+                    'surat_peringatan.tanggal_sp',
+                    'surat_peringatan.no_sp',
+                    'surat_peringatan.pelanggaran',
+                    'surat_peringatan.sanksi',
+                    'mst_karyawan.nama_karyawan',
+                    'mst_karyawan.kd_entitas'
+                )
+                ->join('mst_karyawan', 'surat_peringatan.nip', '=', 'mst_karyawan.nip')
+                ->when($search, function ($query) use ($search) {
+                    $query->where('surat_peringatan.nip', 'like', "%$search%")
+                        ->orWhere('surat_peringatan.tanggal_sp', 'like', "%$search%")
+                        ->orWhere('surat_peringatan.no_sp', 'like', "%$search%")
+                        ->orWhere('surat_peringatan.pelanggaran', 'like', "%$search%")
+                        ->orWhere('mst_karyawan.nama_karyawan', 'like', "%$search%");
+                })
+                ->where('surat_peringatan.nip', $nip)
+                ->orderBy('tanggal_sp', 'DESC')
+                ->simplePaginate($limit);
+        } else if($kategori == 'tanggal') {
+            $data = DB::table('surat_peringatan')
+                ->select(
+                    'surat_peringatan.id',
+                    'surat_peringatan.nip',
+                    'surat_peringatan.tanggal_sp',
+                    'surat_peringatan.no_sp',
+                    'surat_peringatan.pelanggaran',
+                    'surat_peringatan.sanksi',
+                    'mst_karyawan.nama_karyawan',
+                    'mst_karyawan.kd_entitas'
+                )
+                ->join('mst_karyawan', 'surat_peringatan.nip', '=', 'mst_karyawan.nip')
+                ->when($search, function ($query) use ($search) {
+                    $query->where('surat_peringatan.nip', 'like', "%$search%")
+                        ->orWhere('surat_peringatan.tanggal_sp', 'like', "%$search%")
+                        ->orWhere('surat_peringatan.no_sp', 'like', "%$search%")
+                        ->orWhere('surat_peringatan.pelanggaran', 'like', "%$search%")
+                        ->orWhere('mst_karyawan.nama_karyawan', 'like', "%$search%");
+                })
+                ->whereBetween('tanggal_sp', [$request->get('tanggal_awal'), $request->get('tanggal_akhir')])
+                ->orderBy('tanggal_sp', 'DESC')
+                ->simplePaginate($limit);
+        } else if($kategori == 'tahun') {
+            $tahun = (int) $request->get('tahun');
+            $data = DB::table('surat_peringatan')
+                ->select(
+                    'surat_peringatan.id',
+                    'surat_peringatan.nip',
+                    'surat_peringatan.tanggal_sp',
+                    'surat_peringatan.no_sp',
+                    'surat_peringatan.pelanggaran',
+                    'surat_peringatan.sanksi',
+                    'mst_karyawan.nama_karyawan',
+                    'mst_karyawan.kd_entitas',
+                )
+                ->join('mst_karyawan', 'surat_peringatan.nip', '=', 'mst_karyawan.nip')
+                ->when($search, function ($query) use ($search) {
+                    $query->where('surat_peringatan.nip', 'like', "%$search%")
+                        ->orWhere('surat_peringatan.tanggal_sp', 'like', "%$search%")
+                        ->orWhere('surat_peringatan.no_sp', 'like', "%$search%")
+                        ->orWhere('surat_peringatan.pelanggaran', 'like', "%$search%")
+                        ->orWhere('mst_karyawan.nama_karyawan', 'like', "%$search%");
+                })
+                ->whereYear('tanggal_sp', $tahun)
+                ->orderBy('tanggal_sp', 'DESC')
+                ->simplePaginate($limit);
+        }
+
+        foreach ($data as $key => $value) {
+            $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
+            $kantor = '-';
+
+            if($value->entitas) {
+                $is_cabang = isset($value->entitas->cab);
+
+                $kantor = $is_cabang ? $value->entitas->cab->nama_cabang : 'Pusat';
+            } 
+            $value->kantor = $kantor;
+            unset($value->entitas);
+        }
+
+        return $data->items();
+    }
 }

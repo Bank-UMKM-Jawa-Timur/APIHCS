@@ -63,6 +63,7 @@ $router->group(['prefix' => 'pergerakan-karir'], function () use ($router) {
 $router->group(['prefix' => 'history'], function () use ($router) {
     $router->get('jabatan/{id}', 'HistoryController@getHistoryJabatan');
     $router->get('pjs', 'HistoryController@getHistoryPJS');
+    $router->get('surat-peringatan', 'HistoryController@getHistorySP');
 });
 
 $router->get('/cabang', 'CabangController@showCabang');
