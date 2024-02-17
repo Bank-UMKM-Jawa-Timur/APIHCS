@@ -325,13 +325,13 @@ class KaryawanRepository
                 ->leftJoin('mst_bagian', 'mst_karyawan.kd_bagian', 'mst_bagian.kd_bagian')
                 ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
                 ->whereNull('tanggal_penonaktifan')
-                ->where('kd_entitas', $request['divisi'])
-                ->orWhereIn('kd_entitas', $subDivs)
-                ->orWhereIn('kd_bagian', $bagians)
+                ->where('mst_karyawan.kd_entitas', $request['divisi'])
+                ->orWhereIn('mst_karyawan.kd_entitas', $subDivs)
+                ->orWhereIn('mst_karyawan.kd_bagian', $bagians)
                 ->orderByRaw($this->orderRaw)
                 ->orderBy('kd_cabang', 'asc')
                 ->orderBy('kd_entitas', 'asc')
-                ->paginate(25);
+                ->simplePaginate(25);
         } else if ($kategori == 'sub divisi') {
             $entitas = $request['subDivisi'] ?? $request['divisi'];
 
@@ -361,12 +361,12 @@ class KaryawanRepository
                 ->leftJoin('mst_bagian', 'mst_karyawan.kd_bagian', 'mst_bagian.kd_bagian')
                 ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
                 ->whereNull('tanggal_penonaktifan')
-                ->where('kd_entitas', $entitas)
-                ->orWhereIn('kd_bagian', $bagian)
+                ->where('mst_karyawan.kd_entitas', $entitas)
+                ->orWhereIn('mst_karyawan.kd_bagian', $bagian)
                 ->orderByRaw($this->orderRaw)
-                ->orderBy('kd_cabang', 'asc')
-                ->orderBy('kd_entitas', 'asc')
-                ->paginate(25);
+                ->orderBy('mst_karyawan.kd_cabang', 'asc')
+                ->orderBy('mst_karyawan.kd_entitas', 'asc')
+                ->simplePaginate(25);
         } else if ($kategori == 'bagian') {
             $data = DB::table('mst_karyawan')
                 ->select(
@@ -392,12 +392,12 @@ class KaryawanRepository
                 ->leftJoin('mst_bagian', 'mst_karyawan.kd_bagian', 'mst_bagian.kd_bagian')
                 ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
                 ->whereNull('tanggal_penonaktifan')
-                ->where('kd_bagian', $request['bagian'])
+                ->where('mst_karyawan.kd_bagian', $request['bagian'])
                 ->whereNotNull('kd_bagian')
                 ->orderByRaw($this->orderRaw)
-                ->orderBy('kd_cabang', 'asc')
-                ->orderBy('kd_entitas', 'asc')
-                ->paginate(25);
+                ->orderBy('mst_karyawan.kd_cabang', 'asc')
+                ->orderBy('mst_karyawan.kd_entitas', 'asc')
+                ->simplePaginate(25);
         } else if ($kategori == 'kantor') {
             if ($request['kantor'] == 'Cabang') {
                 $data = DB::table('mst_karyawan')
@@ -423,11 +423,11 @@ class KaryawanRepository
                     )->leftJoin('mst_cabang', 'kd_cabang', 'mst_karyawan.kd_entitas')
                     ->leftJoin('mst_bagian', 'mst_karyawan.kd_bagian', 'mst_bagian.kd_bagian')
                     ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
-                    ->whereNull('tanggal_penonaktifan')->where('kd_entitas', $request['kd_cabang'])
+                    ->whereNull('tanggal_penonaktifan')->where('mst_karyawan.kd_entitas', $request['kd_cabang'])
                     ->orderByRaw($this->orderRaw)
-                    ->orderBy('kd_cabang', 'asc')
-                    ->orderBy('kd_entitas', 'asc')
-                    ->paginate(25);
+                    ->orderBy('mst_karyawan.kd_cabang', 'asc')
+                    ->orderBy('mst_karyawan.kd_entitas', 'asc')
+                    ->simplePaginate(25);
             } else {
                 $kd_cabang = DB::table('mst_cabang')
                     ->select('kd_cabang')
@@ -461,9 +461,9 @@ class KaryawanRepository
                     ->orWhere('mst_karyawan.kd_entitas', 0)
                     ->orWhereNull('mst_karyawan.kd_entitas')
                     ->orderByRaw($this->orderRaw)
-                    ->orderBy('kd_cabang', 'asc')
-                    ->orderBy('kd_entitas', 'asc')
-                    ->paginate(25);
+                    ->orderBy('mst_karyawan.kd_cabang', 'asc')
+                    ->orderBy('mst_karyawan.kd_entitas', 'asc')
+                    ->simplePaginate(25);
             }
         } else {
             $data = DB::table('mst_karyawan')
@@ -493,7 +493,7 @@ class KaryawanRepository
                 ->orderByRaw($this->orderRaw)
                 ->orderBy('kd_cabang', 'asc')
                 ->orderBy('kd_entitas', 'asc')
-                ->paginate(25);
+                ->simplePaginate(25);
         }
 
         foreach ($data as $value) {
@@ -552,7 +552,7 @@ class KaryawanRepository
 
             $value->kantor = $value->nama_cabang != null ? $value->nama_cabang : 'Pusat';
         }
-        return $data;
+        return $data->items();
     }
 
     public function listPengkinianData($limit = 10, $search = null)
