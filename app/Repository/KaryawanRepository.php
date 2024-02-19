@@ -1120,6 +1120,11 @@ class KaryawanRepository
             unset($value->entitas);
             $display_jabatan = 'Pjs. ' . $jabatan . ' ' . $entitas;
             $value->display_jabatan = $display_jabatan;
+
+            if($value->tanggal_berakhir != null)
+                $value->status_pjs = 'Aktif';
+            else
+                $value->status_pjs = 'Nonaktif';
         }
         return $data->items();
     }
