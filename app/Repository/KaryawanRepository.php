@@ -62,33 +62,6 @@ class KaryawanRepository
         }
     }
 
-    public function getRincianKaryawn($nip) {
-        $returnData = new stdClass;
-        $data = DB::table('mst_karyawan as m')
-            ->select(
-                'm.nip',
-                'm.nama_karyawan',
-                'm.status_jabatan',
-                'j.nama_jabatan',
-                DB::raw("CONCAT(p.golongan, ' - ', p.pangkat) AS pangkat_golongan"),
-                DB::raw("IF(m.kd_entitas NOT IN(SELECT kd_cabang FROM mst_cabang), 'Pusat', CONCAT('Cab.', c.nama_cabang)) AS kantor"),
-            )
-            ->where('nip', $nip)
-            ->leftJoin('mst_pangkat_golongan as p', 'p.golongan', 'm.kd_panggol')
-            ->leftJoin('mst_cabang as c', 'c.kd_cabang', 'm.kd_entitas')
-            ->leftJoin('mst_jabatan as j', 'j.kd_jabatan', 'm.kd_jabatan')
-            ->first();
-
-        $returnData->nip = $data->nip ?? null;
-        $returnData->nama_karyawan = $data->nama_karyawan ?? null;
-        $returnData->status_jabatan = $data->status_jabatan ?? null;
-        $returnData->nama_jabatan = $data->nama_jabatan ?? null;
-        $returnData->pangkat_golongan = $data->pangkat_golongan ?? null;
-        $returnData->kantor = $data->kantor ?? null;
-
-        return $returnData;
-    }
-
     public function getAllKaryawan($search, $limit = 10, $page = 1)
     {
         $kd_cabang = DB::table('mst_cabang')

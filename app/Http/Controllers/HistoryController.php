@@ -25,6 +25,7 @@ class HistoryController extends Controller
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
         $data = null;
+        $rincian = null;
 
         try {
             $status = 1;
@@ -34,6 +35,7 @@ class HistoryController extends Controller
             $nip = $id;
             $repo = new HistoryRepository;
             $data = $repo->getHistoryJabatan($nip);
+            $rincian = $repo->getRincianKaryawn($nip);
         } catch(Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
@@ -47,6 +49,7 @@ class HistoryController extends Controller
             $response = [
                 'status' => $status,
                 'message' => $message,
+                'rincian' => $rincian,
                 'data' => $data
             ];
 
