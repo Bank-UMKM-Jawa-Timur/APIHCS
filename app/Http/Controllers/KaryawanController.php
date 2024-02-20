@@ -758,7 +758,7 @@ class KaryawanController extends Controller
             $limit = $request->get('limit') ?? 10;
             $search = $request->get('search') ?? null;
             $repo = new KaryawanRepository;
-            $data = $repo->listPromosi($search, $limit);
+            $data = $repo->listDemosi($search, $limit);
         } catch(Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
