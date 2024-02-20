@@ -17,25 +17,26 @@ class HistoryRepository
         $this->karyawanController = new KaryawanController;
     }
 
-    public function getHistoryJabatan($nip) {
+    public function getHistoryJabatan($nip)
+    {
         $dataHistory = [];
         $returnData = [];
         $karyawan = DB::table('demosi_promosi_pangkat')
-        ->where('demosi_promosi_pangkat.nip', $nip)
-        ->select(
-            'demosi_promosi_pangkat.*',
-            'karyawan.*',
-            'newPos.nama_jabatan as jabatan_baru',
-            'oldPos.nama_jabatan as jabatan_lama'
-        )
-        ->join('mst_karyawan as karyawan', 'karyawan.nip', '=', 'demosi_promosi_pangkat.nip')
-        ->join('mst_jabatan as newPos', 'newPos.kd_jabatan', '=', 'demosi_promosi_pangkat.kd_jabatan_baru')
-        ->join('mst_jabatan as oldPos', 'oldPos.kd_jabatan', '=', 'demosi_promosi_pangkat.kd_jabatan_lama')
-        ->orderBy('demosi_promosi_pangkat.id', 'desc')
-        ->get();
+            ->where('demosi_promosi_pangkat.nip', $nip)
+            ->select(
+                'demosi_promosi_pangkat.*',
+                'karyawan.*',
+                'newPos.nama_jabatan as jabatan_baru',
+                'oldPos.nama_jabatan as jabatan_lama'
+            )
+            ->join('mst_karyawan as karyawan', 'karyawan.nip', '=', 'demosi_promosi_pangkat.nip')
+            ->join('mst_jabatan as newPos', 'newPos.kd_jabatan', '=', 'demosi_promosi_pangkat.kd_jabatan_baru')
+            ->join('mst_jabatan as oldPos', 'oldPos.kd_jabatan', '=', 'demosi_promosi_pangkat.kd_jabatan_lama')
+            ->orderBy('demosi_promosi_pangkat.id', 'desc')
+            ->get();
 
-        $karyawan->map(function($data) {
-            if(!$data->kd_entitas_baru) {
+        $karyawan->map(function ($data) {
+            if (!$data->kd_entitas_baru) {
                 $data->kantor_baru = "";
                 return;
             }
@@ -43,19 +44,20 @@ class HistoryRepository
             $entity = $this->karyawanController->addEntity($data->kd_entitas_baru);
             $type = $entity->type;
 
-            if($type == 2) $data->kantor_baru = "Cab. " . $entity->cab->nama_cabang;
+            if ($type == 2)
+                $data->kantor_baru = "Cab. " . $entity->cab->nama_cabang;
 
-            if($type == 1) {
+            if ($type == 1) {
                 $data->kantor_baru = isset($entity->subDiv) ?
-                $entity->subDiv->nama_subdivisi . " (Pusat)":
-                $entity->div->nama_divisi . " (Pusat)";
+                    $entity->subDiv->nama_subdivisi . " (Pusat)" :
+                    $entity->div->nama_divisi . " (Pusat)";
             }
 
             return $data;
         });
 
-        $karyawan->map(function($dataLama) {
-            if(!$dataLama->kd_entitas_lama) {
+        $karyawan->map(function ($dataLama) {
+            if (!$dataLama->kd_entitas_lama) {
                 $dataLama->kantor_lama = "";
                 return;
             }
@@ -63,11 +65,12 @@ class HistoryRepository
             $entityLama = $this->karyawanController->addEntity($dataLama->kd_entitas_lama);
             $typeLama = $entityLama->type;
 
-            if($typeLama == 2) $dataLama->kantor_lama = "Cab. " . $entityLama->cab->nama_cabang;
-            if($typeLama == 1) {
+            if ($typeLama == 2)
+                $dataLama->kantor_lama = "Cab. " . $entityLama->cab->nama_cabang;
+            if ($typeLama == 1) {
                 $dataLama->kantor_lama = isset($entityLama->subDiv) ?
-                $entityLama->subDiv->nama_subdivisi . " (Pusat)":
-                $entityLama->div->nama_divisi." (Pusat)";
+                    $entityLama->subDiv->nama_subdivisi . " (Pusat)" :
+                    $entityLama->div->nama_divisi . " (Pusat)";
             }
 
             return $dataLama;
@@ -77,21 +80,21 @@ class HistoryRepository
             ->where('nip', $nip)
             ->get();
 
-        foreach($karyawan as $item){
+        foreach ($karyawan as $item) {
             array_push($dataHistory, [
                 'tanggal_pengesahan' => $item?->tanggal_pengesahan,
-                'lama' =>  $item?->kd_panggol_lama . ' ' . (($item->status_jabatan_lama != null) ? $item->status_jabatan_lama.' - ' : '') . ' ' . $item->jabatan_lama . ' ' . $item->kantor_lama ?? '-',
-                'baru' => $item?->kd_panggol_baru . ' ' . (($item->status_jabatan_baru != null) ? $item->status_jabatan_baru.' - ' : '') . ' ' . $item->jabatan_baru . ' ' . $item->kantor_baru ?? '-',
+                'lama' => $item?->kd_panggol_lama . ' ' . (($item->status_jabatan_lama != null) ? $item->status_jabatan_lama . ' - ' : '') . ' ' . $item->jabatan_lama . ' ' . $item->kantor_lama ?? '-',
+                'baru' => $item?->kd_panggol_baru . ' ' . (($item->status_jabatan_baru != null) ? $item->status_jabatan_baru . ' - ' : '') . ' ' . $item->jabatan_baru . ' ' . $item->kantor_baru ?? '-',
                 'bukti_sk' => $item?->bukti_sk,
                 'keterangan' => $item?->keterangan
             ]);
         }
 
-        if($data_migrasi){
-            foreach($data_migrasi as $item){
-                if(empty($item?->keterangan)){
+        if ($data_migrasi) {
+            foreach ($data_migrasi as $item) {
+                if (empty($item?->keterangan)) {
                     $keterangan = '-';
-                }else{
+                } else {
                     $keterangan = $item?->keterangan;
                 }
                 array_push($dataHistory, [
@@ -126,13 +129,15 @@ class HistoryRepository
         return $returnData;
     }
 
-    public function getHistoryPJS(Request $request) {
+    public function getHistoryPJS(Request $request)
+    {
         $kategori = strtolower($request->get('kategori'));
-        if($kategori == 'aktif') {
+        if ($kategori == 'aktif') {
             $data = DB::table('pejabat_sementara as pjs')
                 ->join('mst_karyawan as m', 'm.nip', 'pjs.nip')
                 ->select(
                     'm.nama_karyawan',
+                    'm.nip',
                     'pjs.kd_entitas',
                     'pjs.tanggal_mulai',
                     'pjs.tanggal_berakhir',
@@ -148,7 +153,7 @@ class HistoryRepository
                 ->orderBy('pjs.tanggal_mulai', 'desc')
                 ->simplePaginate(25);
 
-            foreach($data as $key => $value) {
+            foreach ($data as $key => $value) {
                 $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
 
                 $jabatan = '';
@@ -189,6 +194,7 @@ class HistoryRepository
                 ->where('pjs.nip', $nip)
                 ->select(
                     'm.nama_karyawan',
+                    'm.nip',
                     'pjs.kd_entitas',
                     'pjs.tanggal_mulai',
                     'pjs.tanggal_berakhir',
@@ -203,7 +209,7 @@ class HistoryRepository
                 ->orderBy('pjs.tanggal_mulai', 'desc')
                 ->simplePaginate(25);
 
-            foreach($data as $key => $value) {
+            foreach ($data as $key => $value) {
                 $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
 
                 $jabatan = '';
@@ -235,9 +241,9 @@ class HistoryRepository
                 unset($value->entitas);
                 $display_jabatan = 'Pjs. ' . $jabatan . ' ' . $entitas . ' ' . $value?->nama_bagian;
                 $value->display_jabatan = $display_jabatan;
-                if($value->tanggal_berakhir != null)
+                if ($value->tanggal_berakhir != null)
                     $value->status = 'Aktif';
-                else 
+                else
                     $value->status = 'Nonaktif';
             }
 
@@ -245,12 +251,13 @@ class HistoryRepository
         }
     }
 
-    public function getHistorySP(Request $request) {
+    public function getHistorySP(Request $request)
+    {
         $kategori = strtolower($request->get('kategori'));
         $limit = $request->get('limit') ?? 10;
         $search = $request->get('search') ?? null;
 
-        if($kategori == 'keseluruhan') {
+        if ($kategori == 'keseluruhan') {
             $data = DB::table('surat_peringatan')
                 ->select(
                     'surat_peringatan.id',
@@ -272,7 +279,7 @@ class HistoryRepository
                 })
                 ->orderBy('tanggal_sp', 'DESC')
                 ->simplePaginate($limit);
-        } else if($kategori == 'karyawan') {
+        } else if ($kategori == 'karyawan') {
             $nip = $request->get('nip');
             $data = DB::table('surat_peringatan')
                 ->select(
@@ -296,7 +303,7 @@ class HistoryRepository
                 ->where('surat_peringatan.nip', $nip)
                 ->orderBy('tanggal_sp', 'DESC')
                 ->simplePaginate($limit);
-        } else if($kategori == 'tanggal') {
+        } else if ($kategori == 'tanggal') {
             $data = DB::table('surat_peringatan')
                 ->select(
                     'surat_peringatan.id',
@@ -319,7 +326,7 @@ class HistoryRepository
                 ->whereBetween('tanggal_sp', [$request->get('tanggal_awal'), $request->get('tanggal_akhir')])
                 ->orderBy('tanggal_sp', 'DESC')
                 ->simplePaginate($limit);
-        } else if($kategori == 'tahun') {
+        } else if ($kategori == 'tahun') {
             $tahun = (int) $request->get('tahun');
             $data = DB::table('surat_peringatan')
                 ->select(
@@ -349,11 +356,11 @@ class HistoryRepository
             $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
             $kantor = '-';
 
-            if($value->entitas) {
+            if ($value->entitas) {
                 $is_cabang = isset($value->entitas->cab);
 
                 $kantor = $is_cabang ? $value->entitas->cab->nama_cabang : 'Pusat';
-            } 
+            }
             $value->kantor = $kantor;
             unset($value->entitas);
         }
