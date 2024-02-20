@@ -513,6 +513,7 @@ class KaryawanController extends Controller
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
         $data = null;
+        $rincian = null;
 
         try {
             $message = 'Berhasil menampilkan karyawan.';
@@ -522,6 +523,8 @@ class KaryawanController extends Controller
 
             $repo = new KaryawanRepository();
             $data = $repo->searchGetCKaryawan($search);
+            if($data != null) 
+                $rincian = $repo->getRincianKaryawn($data[0]->nip);
         } catch (Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
@@ -534,6 +537,7 @@ class KaryawanController extends Controller
             $response = [
                 'status' => $status,
                 'message' => $message,
+                'rincian' => $rincian,
                 'data' => $data
             ];
 
