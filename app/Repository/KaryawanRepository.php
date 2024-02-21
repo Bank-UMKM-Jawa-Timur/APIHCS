@@ -1171,6 +1171,7 @@ class KaryawanRepository
                 'surat_peringatan.no_sp',
                 'surat_peringatan.pelanggaran',
                 'surat_peringatan.sanksi',
+                'surat_peringatan.file_sk',
                 'mst_karyawan.nama_karyawan',
                 'mst_karyawan.status_jabatan',
                 'mst_karyawan.ket_jabatan',
