@@ -1147,8 +1147,17 @@ class KaryawanRepository
                 'surat_peringatan.pelanggaran',
                 'surat_peringatan.sanksi',
                 'mst_karyawan.nama_karyawan',
+                'mst_karyawan.status_jabatan',
+                'mst_karyawan.ket_jabatan',
+                'mst_jabatan.nama_jabatan',
+                'mst_karyawan.kd_entitas',
+                'mst_cabang.nama_cabang',
+                'mst_bagian.nama_bagian'
             )
             ->join('mst_karyawan', 'surat_peringatan.nip', '=', 'mst_karyawan.nip')
+            ->leftJoin('mst_jabatan', 'mst_karyawan.kd_jabatan', 'mst_jabatan.kd_jabatan')
+            ->leftJoin('mst_cabang', 'mst_karyawan.kd_entitas', 'mst_cabang.kd_cabang')
+            ->leftJoin('mst_bagian', 'mst_bagian.kd_bagian', 'mst_karyawan.kd_bagian')
             ->when($search, function ($query) use ($search) {
                 $query->where('surat_peringatan.nip', 'like', "%$search%")
                     ->orWhere('surat_peringatan.tanggal_sp', 'like', "%$search%")
@@ -1158,7 +1167,45 @@ class KaryawanRepository
             })
             ->orderBy('tanggal_sp', 'DESC')
             ->simplePaginate($limit);
+        foreach ($data as $value) {
+            $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
+            $prefix = match ($value->status_jabatan) {
+                'Penjabat' => 'Pj. ',
+                'Penjabat Sementara' => 'Pjs. ',
+                default => '',
+            };
 
+            $jabatan = '';
+            if ($value->nama_jabatan) {
+                $jabatan = $value->nama_jabatan;
+            } else {
+                $jabatan = 'undifined';
+            }
+
+            $ket = $value->ket_jabatan ? "({$value->ket_jabatan})" : '';
+
+            if (isset($value->entitas->subDiv)) {
+                $entitas = $value->entitas->subDiv->nama_subdivisi;
+            } elseif (isset($value->entitas->div)) {
+                $entitas = $value->entitas->div->nama_divisi;
+            } else {
+                $entitas = '';
+            }
+
+            if ($jabatan == 'Pemimpin Sub Divisi') {
+                $jabatan = 'PSD';
+            } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
+                $jabatan = 'PBO';
+            } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
+                $jabatan = 'PBP';
+            } else {
+                $jabatan = $value->nama_jabatan ? $value->nama_jabatan : 'undifined';
+            }
+
+            unset($value->entitas);
+            $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $value?->nama_bagian . ' ' . $ket . ($value->nama_cabang != null ? ' Cabang ' . $value->nama_cabang : ' (Pusat)');
+            $value->display_jabatan = $display_jabatan;
+        }
         return $data->items();
     }
 }
