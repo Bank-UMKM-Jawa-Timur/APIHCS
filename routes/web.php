@@ -66,10 +66,15 @@ $router->group(['prefix' => 'history'], function () use ($router) {
     $router->get('surat-peringatan', 'HistoryController@getHistorySP');
 });
 
+// Surat peringatan
+$router->group(['prefix' => 'surat-peringatan'], function () use ($router) {
+    $router->get('/', 'KaryawanController@listSP');
+    $router->get('/{id}', 'KaryawanController@detailSP');
+});
+
 $router->get('/cabang', 'CabangController@showCabang');
 $router->get('/divisi', 'DivisiController@showDivisi');
 $router->get('/sub-divisi/{id}', 'SubdivisiController@showSubdivisi');
 $router->get('/bagian/{id}', 'BagianController@showBagian');
 $router->get('/dashboard', 'DashboardController@getDataDashboard');
 $router->get('/pjs', 'KaryawanController@listPJS');
-$router->get('/surat-peringatan', 'KaryawanController@listSP');

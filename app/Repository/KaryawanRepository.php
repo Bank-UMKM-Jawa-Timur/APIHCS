@@ -1147,6 +1147,31 @@ class KaryawanRepository
                 'surat_peringatan.pelanggaran',
                 'surat_peringatan.sanksi',
                 'mst_karyawan.nama_karyawan',
+            )
+            ->join('mst_karyawan', 'surat_peringatan.nip', '=', 'mst_karyawan.nip')
+            ->when($search, function ($query) use ($search) {
+                $query->where('surat_peringatan.nip', 'like', "%$search%")
+                    ->orWhere('surat_peringatan.tanggal_sp', 'like', "%$search%")
+                    ->orWhere('surat_peringatan.no_sp', 'like', "%$search%")
+                    ->orWhere('surat_peringatan.pelanggaran', 'like', "%$search%")
+                    ->orWhere('mst_karyawan.nama_karyawan', 'like', "%$search%");
+            })
+            ->orderBy('tanggal_sp', 'DESC')
+            ->simplePaginate($limit);
+
+        return $data->items();
+    }
+
+    public function detailSP($id) {
+        $data = DB::table('surat_peringatan')
+            ->select(
+                'surat_peringatan.id',
+                'surat_peringatan.nip',
+                'surat_peringatan.tanggal_sp',
+                'surat_peringatan.no_sp',
+                'surat_peringatan.pelanggaran',
+                'surat_peringatan.sanksi',
+                'mst_karyawan.nama_karyawan',
                 'mst_karyawan.status_jabatan',
                 'mst_karyawan.ket_jabatan',
                 'mst_jabatan.nama_jabatan',
@@ -1158,54 +1183,47 @@ class KaryawanRepository
             ->leftJoin('mst_jabatan', 'mst_karyawan.kd_jabatan', 'mst_jabatan.kd_jabatan')
             ->leftJoin('mst_cabang', 'mst_karyawan.kd_entitas', 'mst_cabang.kd_cabang')
             ->leftJoin('mst_bagian', 'mst_bagian.kd_bagian', 'mst_karyawan.kd_bagian')
-            ->when($search, function ($query) use ($search) {
-                $query->where('surat_peringatan.nip', 'like', "%$search%")
-                    ->orWhere('surat_peringatan.tanggal_sp', 'like', "%$search%")
-                    ->orWhere('surat_peringatan.no_sp', 'like', "%$search%")
-                    ->orWhere('surat_peringatan.pelanggaran', 'like', "%$search%")
-                    ->orWhere('mst_karyawan.nama_karyawan', 'like', "%$search%");
-            })
+            ->where('surat_peringatan.id', $id)
             ->orderBy('tanggal_sp', 'DESC')
-            ->simplePaginate($limit);
-        foreach ($data as $value) {
-            $value->entitas = $this->karyawanController->addEntity($value->kd_entitas);
-            $prefix = match ($value->status_jabatan) {
-                'Penjabat' => 'Pj. ',
-                'Penjabat Sementara' => 'Pjs. ',
-                default => '',
-            };
+            ->first();
 
-            $jabatan = '';
-            if ($value->nama_jabatan) {
-                $jabatan = $value->nama_jabatan;
-            } else {
-                $jabatan = 'undifined';
-            }
+        $data->entitas = $this->karyawanController->addEntity($data->kd_entitas);
+        $prefix = match ($data->status_jabatan) {
+            'Penjabat' => 'Pj. ',
+            'Penjabat Sementara' => 'Pjs. ',
+            default => '',
+        };
 
-            $ket = $value->ket_jabatan ? "({$value->ket_jabatan})" : '';
-
-            if (isset($value->entitas->subDiv)) {
-                $entitas = $value->entitas->subDiv->nama_subdivisi;
-            } elseif (isset($value->entitas->div)) {
-                $entitas = $value->entitas->div->nama_divisi;
-            } else {
-                $entitas = '';
-            }
-
-            if ($jabatan == 'Pemimpin Sub Divisi') {
-                $jabatan = 'PSD';
-            } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
-                $jabatan = 'PBO';
-            } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
-                $jabatan = 'PBP';
-            } else {
-                $jabatan = $value->nama_jabatan ? $value->nama_jabatan : 'undifined';
-            }
-
-            unset($value->entitas);
-            $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $value?->nama_bagian . ' ' . $ket . ($value->nama_cabang != null ? ' Cabang ' . $value->nama_cabang : ' (Pusat)');
-            $value->display_jabatan = $display_jabatan;
+        $jabatan = '';
+        if ($data->nama_jabatan) {
+            $jabatan = $data->nama_jabatan;
+        } else {
+            $jabatan = 'undifined';
         }
-        return $data->items();
+
+        $ket = $data->ket_jabatan ? "({$data->ket_jabatan})" : '';
+
+        if (isset($data->entitas->subDiv)) {
+            $entitas = $data->entitas->subDiv->nama_subdivisi;
+        } elseif (isset($data->entitas->div)) {
+            $entitas = $data->entitas->div->nama_divisi;
+        } else {
+            $entitas = '';
+        }
+
+        if ($jabatan == 'Pemimpin Sub Divisi') {
+            $jabatan = 'PSD';
+        } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
+            $jabatan = 'PBO';
+        } elseif ($jabatan == 'Pemimpin Bidang Pemasaran') {
+            $jabatan = 'PBP';
+        } else {
+            $jabatan = $data->nama_jabatan ? $data->nama_jabatan : 'undifined';
+        }
+
+        unset($data->entitas);
+        $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $data?->nama_bagian . ' ' . $ket . ($data->nama_cabang != null ? ' Cabang ' . $data->nama_cabang : ' (Pusat)');
+        $data->display_jabatan = $display_jabatan;
+        return $data;
     }
 }

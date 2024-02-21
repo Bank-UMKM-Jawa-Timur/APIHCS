@@ -881,6 +881,38 @@ class KaryawanController extends Controller
         }
     }
 
+    public function detailSP($id) {
+        $status = 0;
+        $message = '';
+        $responseCode = Response::HTTP_UNAUTHORIZED;
+        $data = null;
+
+        try {
+            $status = 1;
+            $message = 'Berhasil menampilkan list surat peringatan.';
+            $responseCode = Response::HTTP_OK;
+
+            $repo = new KaryawanRepository;
+            $data = $repo->detailSP($id);
+        } catch(Exception $e) {
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } catch(QueryException $e) {
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } finally {
+            $response = [
+                'status' => $status,
+                'message' => $message,
+                'data' => $data
+            ];
+
+            return response()->json($response, $responseCode);
+        }
+    }
+
     public function addEntity($karyawan)
     {
         return $this->getEntity($karyawan);
