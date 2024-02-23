@@ -8,64 +8,65 @@ use stdClass;
 
 class SlipGajiRepository
 {
-    public function list($nip, $tahun, int $bulan = 0) {
+    public function list($nip, $tahun, int $bulan = 0)
+    {
         $returnData = [];
         $karyawan = DB::table('mst_karyawan')
             ->where('nip', $nip)
             ->first();
         $data = DB::table('gaji_per_bulan AS gaji')
-                    ->select(
-                        'gaji.id',
-                        'gaji.batch_id',
-                        'batch.tanggal_input',
-                        'batch.tanggal_cetak',
-                        'batch.tanggal_upload',
-                        'batch.tanggal_final',
-                        'batch.file',
-                        'batch.status',
-                        'gaji.nip',
-                        DB::raw("CAST(gaji.bulan AS SIGNED) AS bulan"),
-                        'gaji.gj_pokok',
-                        'gaji.gj_penyesuaian',
-                        'gaji.tj_keluarga',
-                        'gaji.tj_telepon',
-                        'gaji.tj_jabatan',
-                        'gaji.tj_teller',
-                        'gaji.tj_perumahan',
-                        'gaji.tj_kemahalan',
-                        'gaji.tj_pelaksana',
-                        'gaji.tj_kesejahteraan',
-                        'gaji.tj_multilevel',
-                        'gaji.tj_ti',
-                        'gaji.tj_fungsional',
-                        'gaji.tj_transport',
-                        'gaji.tj_pulsa',
-                        'gaji.tj_vitamin',
-                        'gaji.uang_makan',
-                        'gaji.dpp',
-                        'gaji.kredit_koperasi',
-                        'gaji.iuran_koperasi',
-                        'gaji.kredit_pegawai',
-                        'gaji.iuran_ik',
-                        DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti + gaji.tj_transport + gaji.tj_pulsa + gaji.tj_vitamin + gaji.uang_makan) AS gaji"),
-                        DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_telepon + gaji.tj_pelaksana + gaji.tj_kemahalan + gaji.tj_kesejahteraan) AS total_gaji"),
-                        DB::raw("(gaji.uang_makan + gaji.tj_vitamin + gaji.tj_pulsa + gaji.tj_transport) AS total_tunjangan_lainnya"),
-                    )
-                    ->join('batch_gaji_per_bulan AS batch', 'batch.id', 'gaji.batch_id')
-                    ->whereNull('batch.deleted_at')
-                    ->where('gaji.nip', $nip)
-                    ->where('gaji.tahun', $tahun)
-                    ->when($bulan, function($query) use ($bulan) {
-                        if ($bulan != 0) {
-                            $query->where('gaji.bulan', $bulan);
-                        }
-                    })
-                    ->orderBy('gaji.tahun')
-                    ->orderBy('gaji.bulan')
-                    ->get();
+            ->select(
+                'gaji.id',
+                'gaji.batch_id',
+                'batch.tanggal_input',
+                'batch.tanggal_cetak',
+                'batch.tanggal_upload',
+                'batch.tanggal_final',
+                'batch.file',
+                'batch.status',
+                'gaji.nip',
+                DB::raw("CAST(gaji.bulan AS SIGNED) AS bulan"),
+                'gaji.gj_pokok',
+                'gaji.gj_penyesuaian',
+                'gaji.tj_keluarga',
+                'gaji.tj_telepon',
+                'gaji.tj_jabatan',
+                'gaji.tj_teller',
+                'gaji.tj_perumahan',
+                'gaji.tj_kemahalan',
+                'gaji.tj_pelaksana',
+                'gaji.tj_kesejahteraan',
+                'gaji.tj_multilevel',
+                'gaji.tj_ti',
+                'gaji.tj_fungsional',
+                'gaji.tj_transport',
+                'gaji.tj_pulsa',
+                'gaji.tj_vitamin',
+                'gaji.uang_makan',
+                'gaji.dpp',
+                'gaji.kredit_koperasi',
+                'gaji.iuran_koperasi',
+                'gaji.kredit_pegawai',
+                'gaji.iuran_ik',
+                DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti + gaji.tj_transport + gaji.tj_pulsa + gaji.tj_vitamin + gaji.uang_makan) AS gaji"),
+                DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_telepon + gaji.tj_pelaksana + gaji.tj_kemahalan + gaji.tj_kesejahteraan) AS total_gaji"),
+                DB::raw("(gaji.uang_makan + gaji.tj_vitamin + gaji.tj_pulsa + gaji.tj_transport) AS total_tunjangan_lainnya"),
+            )
+            ->join('batch_gaji_per_bulan AS batch', 'batch.id', 'gaji.batch_id')
+            ->whereNull('batch.deleted_at')
+            ->where('gaji.nip', $nip)
+            ->where('gaji.tahun', $tahun)
+            ->when($bulan, function ($query) use ($bulan) {
+                if ($bulan != 0) {
+                    $query->where('gaji.bulan', $bulan);
+                }
+            })
+            ->orderBy('gaji.tahun')
+            ->orderBy('gaji.bulan')
+            ->get();
 
-        if($data != null){
-            foreach($data as $key => $value){
+        if ($data != null) {
+            foreach ($data as $key => $value) {
                 $tj_khusus = 0;
                 if ($value->tj_ti > 0) {
                     $tj_khusus += $value->tj_ti;
@@ -106,7 +107,7 @@ class SlipGajiRepository
                     $batas_bawah = 0;
                     $jp_jan_feb = 0;
                     $jp_mar_des = 0;
-                }else{
+                } else {
                     $persen_jkk = $hitungan_penambah->jkk;
                     $persen_jht = $hitungan_penambah->jht;
                     $persen_jkm = $hitungan_penambah->jkm;
@@ -119,31 +120,31 @@ class SlipGajiRepository
                     $jp_jan_feb = $hitungan_pengurang->jp_jan_feb;
                     $jp_mar_des = $hitungan_pengurang->jp_mar_des;
                 }
-                
+
                 $potongan = new \stdClass();
                 $data_list = new \stdClass();
                 // Get BPJS TK * Kesehatan
                 $obj_gaji = $value;
                 $gaji = $obj_gaji->gaji;
                 $total_gaji = $obj_gaji->total_gaji;
-                if($total_gaji > 0){
+                if ($total_gaji > 0) {
                     $jkk = 0;
                     $jht = 0;
                     $jkm = 0;
                     $jp_penambah = 0;
-                    if(!$karyawan->tanggal_penonaktifan && $karyawan->kpj){
+                    if (!$karyawan->tanggal_penonaktifan && $karyawan->kpj) {
                         $jkk = round(($persen_jkk / 100) * $total_gaji);
                         $jht = round(($persen_jht / 100) * $total_gaji);
                         $jkm = round(($persen_jkm / 100) * $total_gaji);
                         $jp_penambah = round(($persen_jp_penambah / 100) * $total_gaji);
                     }
 
-                    if($karyawan->jkn){
-                        if($total_gaji > $batas_atas){
+                    if ($karyawan->jkn) {
+                        if ($total_gaji > $batas_atas) {
                             $bpjs_kesehatan = round($batas_atas * ($persen_kesehatan / 100));
-                        } else if($total_gaji < $batas_bawah){
+                        } else if ($total_gaji < $batas_bawah) {
                             $bpjs_kesehatan = round($batas_bawah * ($persen_kesehatan / 100));
-                        } else{
+                        } else {
                             $bpjs_kesehatan = round($total_gaji * ($persen_kesehatan / 100));
                         }
                     }
@@ -159,7 +160,7 @@ class SlipGajiRepository
                 // DPP (Pokok + Keluarga + Kesejahteraan 50%) * 5%
                 $dpp = (($gj_pokok + $tj_keluarga) + ($tj_kesejahteraan * 0.5)) * ($persen_dpp / 100);
                 // dd($gj_pokok ,$tj_keluarga,$tj_kesejahteraan,$persen_dpp, $dpp);
-                if($gaji >= $nominal_jp){
+                if ($gaji >= $nominal_jp) {
                     $jp_1_persen = round($nominal_jp * ($persen_jp_pengurang / 100), 2);
                 } else {
                     $jp_1_persen = round($gaji * ($persen_jp_pengurang / 100), 2);
@@ -175,16 +176,13 @@ class SlipGajiRepository
                 if ($obj_gaji->bulan > 2) {
                     if ($total_gaji > $jp_mar_des) {
                         $bpjs_tk = $jp_mar_des * 1 / 100;
-                    }
-                    else {
+                    } else {
                         $bpjs_tk = $total_gaji * 1 / 100;
                     }
-                }
-                else {
+                } else {
                     if ($total_gaji >= $jp_jan_feb) {
                         $bpjs_tk = $jp_jan_feb * 1 / 100;
-                    }
-                    else {
+                    } else {
                         $bpjs_tk = $total_gaji * 1 / 100;
                     }
                 }
@@ -199,7 +197,7 @@ class SlipGajiRepository
                 $potongan->total_potongan = (int) $total_potongan;
                 $value->potongan = $potongan;
                 // End GET POTONGAN
-                
+
                 // GET Gaji bersih
                 $total_diterima = (int) $value->total_gaji - $total_potongan;
                 $value->total_diterima = (int) $total_diterima;
@@ -214,60 +212,61 @@ class SlipGajiRepository
         return $data;
     }
 
-    public function detail($id) {
+    public function detail($id)
+    {
         $data = DB::table('gaji_per_bulan AS gaji')
-                    ->select(
-                        'gaji.id',
-                        'gaji.batch_id',
-                        'batch.tanggal_input',
-                        'batch.tanggal_cetak',
-                        'batch.tanggal_upload',
-                        'batch.tanggal_final',
-                        'batch.file',
-                        'batch.status',
-                        'batch.kd_entitas as entitas_gaji',
-                        'gaji.nip',
-                        DB::raw("CAST(gaji.bulan AS SIGNED) AS bulan"),
-                        'gaji.gj_pokok',
-                        'gaji.gj_penyesuaian',
-                        'gaji.tj_keluarga',
-                        'gaji.tj_telepon',
-                        'gaji.tj_jabatan',
-                        'gaji.tj_teller',
-                        'gaji.tj_perumahan',
-                        'gaji.tj_kemahalan',
-                        'gaji.tj_pelaksana',
-                        'gaji.tj_kesejahteraan',
-                        'gaji.tj_multilevel',
-                        'gaji.tj_ti',
-                        'gaji.tj_fungsional',
-                        'gaji.tj_transport',
-                        'gaji.tj_pulsa',
-                        'gaji.tj_vitamin',
-                        'gaji.uang_makan',
-                        'gaji.dpp',
-                        'gaji.kredit_koperasi',
-                        'gaji.iuran_koperasi',
-                        'gaji.kredit_pegawai',
-                        'gaji.iuran_ik',
-                        DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti + gaji.tj_transport + gaji.tj_pulsa + gaji.tj_vitamin + gaji.uang_makan) AS gaji"),
-                        DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_telepon + gaji.tj_pelaksana + gaji.tj_kemahalan + gaji.tj_kesejahteraan) AS total_gaji"),
-                        DB::raw("(gaji.uang_makan + gaji.tj_vitamin + gaji.tj_pulsa + gaji.tj_transport) AS total_tunjangan_lainnya"),
-                    )
-                    ->join('batch_gaji_per_bulan AS batch', 'batch.id', 'gaji.batch_id')
-                    ->whereNull('batch.deleted_at')
-                    ->where('gaji.id', $id)
-                    ->orderBy('gaji.tahun')
-                    ->orderBy('gaji.bulan')
-                    ->first();
+            ->select(
+                'gaji.id',
+                'gaji.batch_id',
+                'batch.tanggal_input',
+                'batch.tanggal_cetak',
+                'batch.tanggal_upload',
+                'batch.tanggal_final',
+                'batch.file',
+                'batch.status',
+                'batch.kd_entitas as entitas_gaji',
+                'gaji.nip',
+                DB::raw("CAST(gaji.bulan AS SIGNED) AS bulan"),
+                'gaji.gj_pokok',
+                'gaji.gj_penyesuaian',
+                'gaji.tj_keluarga',
+                'gaji.tj_telepon',
+                'gaji.tj_jabatan',
+                'gaji.tj_teller',
+                'gaji.tj_perumahan',
+                'gaji.tj_kemahalan',
+                'gaji.tj_pelaksana',
+                'gaji.tj_kesejahteraan',
+                'gaji.tj_multilevel',
+                'gaji.tj_ti',
+                'gaji.tj_fungsional',
+                'gaji.tj_transport',
+                'gaji.tj_pulsa',
+                'gaji.tj_vitamin',
+                'gaji.uang_makan',
+                'gaji.dpp',
+                'gaji.kredit_koperasi',
+                'gaji.iuran_koperasi',
+                'gaji.kredit_pegawai',
+                'gaji.iuran_ik',
+                DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti + gaji.tj_transport + gaji.tj_pulsa + gaji.tj_vitamin + gaji.uang_makan) AS gaji"),
+                DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_telepon + gaji.tj_pelaksana + gaji.tj_kemahalan + gaji.tj_kesejahteraan) AS total_gaji"),
+                DB::raw("(gaji.uang_makan + gaji.tj_vitamin + gaji.tj_pulsa + gaji.tj_transport) AS total_tunjangan_lainnya"),
+            )
+            ->join('batch_gaji_per_bulan AS batch', 'batch.id', 'gaji.batch_id')
+            ->whereNull('batch.deleted_at')
+            ->where('gaji.id', $id)
+            ->orderBy('gaji.tahun')
+            ->orderBy('gaji.bulan')
+            ->first();
 
-        if($data != null){
+        if ($data != null) {
             $karyawan = DB::table('mst_karyawan')
                 ->where('nip', $data->nip)
                 ->first();
 
             $ttdKaryawan = new stdClass;
-            if($data->entitas_gaji != '000'){
+            if ($data->entitas_gaji != '000') {
                 $kantorCabang = DB::table('mst_cabang')
                     ->where('kd_cabang', $data->entitas_gaji)
                     ->first();
@@ -281,8 +280,8 @@ class SlipGajiRepository
                 $kantor = 'Surabaya';
                 $pincab = new stdClass;
                 $dataPincab = DB::table('mst_karyawan')
-                    ->where('mst_karyawan.kd_jabatan','PIMDIV')
-                    ->where('mst_karyawan.kd_entitas','UMUM')
+                    ->where('mst_karyawan.kd_jabatan', 'PIMDIV')
+                    ->where('mst_karyawan.kd_entitas', 'UMUM')
                     ->leftJoin('mst_cabang', 'mst_cabang.kd_cabang', 'mst_karyawan.kd_entitas')
                     ->leftJoin('mst_bagian', 'mst_bagian.kd_bagian', 'mst_karyawan.kd_bagian')
                     ->leftJoin('mst_pangkat_golongan', 'mst_pangkat_golongan.golongan', 'mst_karyawan.kd_panggol')
@@ -315,16 +314,16 @@ class SlipGajiRepository
                     'Penjabat Sementara' => 'Pjs. ',
                     default => '',
                 };
-                
+
                 $jabatan = '';
                 if ($dataPincab->nama_jabatan) {
                     $jabatan = $dataPincab->nama_jabatan;
                 } else {
                     $jabatan = 'undifined';
                 }
-                
+
                 $ket = $dataPincab->ket_jabatan ? "({$dataPincab->ket_jabatan})" : '';
-                
+
                 if (isset($pincab->entitas->subDiv)) {
                     $entitas = $pincab->entitas->subDiv->nama_subdivisi;
                 } elseif (isset($pincab->entitas->div)) {
@@ -332,7 +331,7 @@ class SlipGajiRepository
                 } else {
                     $entitas = '';
                 }
-                
+
                 if ($jabatan == 'Pemimpin Sub Divisi') {
                     $jabatan = 'PSD';
                 } elseif ($jabatan == 'Pemimpin Bidang Operasional') {
@@ -342,7 +341,7 @@ class SlipGajiRepository
                 } else {
                     $jabatan = $dataPincab?->nama_jabatan ? $dataPincab?->nama_jabatan : 'undifined';
                 }
-    
+
                 $display_jabatan = $prefix . ' ' . $jabatan . ' ' . $entitas . ' ' . $dataPincab?->nama_bagian . ' ' . $ket;
             }
 
@@ -390,7 +389,7 @@ class SlipGajiRepository
                 $batas_bawah = 0;
                 $jp_jan_feb = 0;
                 $jp_mar_des = 0;
-            }else{
+            } else {
                 $persen_jkk = $hitungan_penambah->jkk;
                 $persen_jht = $hitungan_penambah->jht;
                 $persen_jkm = $hitungan_penambah->jkm;
@@ -403,31 +402,31 @@ class SlipGajiRepository
                 $jp_jan_feb = $hitungan_pengurang->jp_jan_feb;
                 $jp_mar_des = $hitungan_pengurang->jp_mar_des;
             }
-            
+
             $potongan = new \stdClass();
             $data_list = new \stdClass();
             // Get BPJS TK * Kesehatan
             $obj_gaji = $data;
             $gaji = $obj_gaji->gaji;
             $total_gaji = $obj_gaji->total_gaji;
-            if($total_gaji > 0){
+            if ($total_gaji > 0) {
                 $jkk = 0;
                 $jht = 0;
                 $jkm = 0;
                 $jp_penambah = 0;
-                if(!$karyawan->tanggal_penonaktifan && $karyawan->kpj){
+                if (!$karyawan->tanggal_penonaktifan && $karyawan->kpj) {
                     $jkk = round(($persen_jkk / 100) * $total_gaji);
                     $jht = round(($persen_jht / 100) * $total_gaji);
                     $jkm = round(($persen_jkm / 100) * $total_gaji);
                     $jp_penambah = round(($persen_jp_penambah / 100) * $total_gaji);
                 }
 
-                if($karyawan->jkn){
-                    if($total_gaji > $batas_atas){
+                if ($karyawan->jkn) {
+                    if ($total_gaji > $batas_atas) {
                         $bpjs_kesehatan = round($batas_atas * ($persen_kesehatan / 100));
-                    } else if($total_gaji < $batas_bawah){
+                    } else if ($total_gaji < $batas_bawah) {
                         $bpjs_kesehatan = round($batas_bawah * ($persen_kesehatan / 100));
-                    } else{
+                    } else {
                         $bpjs_kesehatan = round($total_gaji * ($persen_kesehatan / 100));
                     }
                 }
@@ -443,7 +442,7 @@ class SlipGajiRepository
             // DPP (Pokok + Keluarga + Kesejahteraan 50%) * 5%
             $dpp = (($gj_pokok + $tj_keluarga) + ($tj_kesejahteraan * 0.5)) * ($persen_dpp / 100);
             // dd($gj_pokok ,$tj_keluarga,$tj_kesejahteraan,$persen_dpp, $dpp);
-            if($gaji >= $nominal_jp){
+            if ($gaji >= $nominal_jp) {
                 $jp_1_persen = round($nominal_jp * ($persen_jp_pengurang / 100), 2);
             } else {
                 $jp_1_persen = round($gaji * ($persen_jp_pengurang / 100), 2);
@@ -459,16 +458,13 @@ class SlipGajiRepository
             if ($obj_gaji->bulan > 2) {
                 if ($total_gaji > $jp_mar_des) {
                     $bpjs_tk = $jp_mar_des * 1 / 100;
-                }
-                else {
+                } else {
                     $bpjs_tk = $total_gaji * 1 / 100;
                 }
-            }
-            else {
+            } else {
                 if ($total_gaji >= $jp_jan_feb) {
                     $bpjs_tk = $jp_jan_feb * 1 / 100;
-                }
-                else {
+                } else {
                     $bpjs_tk = $total_gaji * 1 / 100;
                 }
             }
@@ -483,7 +479,7 @@ class SlipGajiRepository
             $potongan->total_potongan = (int) $total_potongan;
             $data->potongan = $potongan;
             // End GET POTONGAN
-            
+
             // GET Gaji bersih
             $total_diterima = (int) $data->total_gaji - $total_potongan;
             $data->total_diterima = (int) $total_diterima;
