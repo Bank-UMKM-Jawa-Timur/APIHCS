@@ -371,7 +371,6 @@ class KaryawanRepository
                 ->where('mst_karyawan.kd_entitas', $entitas)
                 ->orWhereIn('mst_karyawan.kd_bagian', $bagian)
                 ->orderByRaw($this->orderRaw)
-                ->orderBy('mst_karyawan.kd_cabang', 'asc')
                 ->orderBy('mst_karyawan.kd_entitas', 'asc')
                 ->simplePaginate(25);
         } else if ($kategori == 'bagian') {
@@ -400,13 +399,13 @@ class KaryawanRepository
                 ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
                 ->whereNull('tanggal_penonaktifan')
                 ->where('mst_karyawan.kd_bagian', $request['bagian'])
-                ->whereNotNull('kd_bagian')
+                ->whereNotNull('mst_karyawan.kd_bagian')
                 ->orderByRaw($this->orderRaw)
-                ->orderBy('mst_karyawan.kd_cabang', 'asc')
                 ->orderBy('mst_karyawan.kd_entitas', 'asc')
                 ->simplePaginate(25);
         } else if ($kategori == 'kantor') {
-            if ($request['kantor'] == 'Cabang') {
+            $kantor = strtolower($request['kantor']);
+            if ($kantor == 'cabang') {
                 $data = DB::table('mst_karyawan')
                     ->select(
                         'mst_karyawan.nip',
@@ -432,7 +431,6 @@ class KaryawanRepository
                     ->leftJoin('mst_jabatan', 'mst_jabatan.kd_jabatan', 'mst_karyawan.kd_jabatan')
                     ->whereNull('tanggal_penonaktifan')->where('mst_karyawan.kd_entitas', $request['kd_cabang'])
                     ->orderByRaw($this->orderRaw)
-                    ->orderBy('mst_karyawan.kd_cabang', 'asc')
                     ->orderBy('mst_karyawan.kd_entitas', 'asc')
                     ->simplePaginate(25);
             } else {
@@ -468,7 +466,6 @@ class KaryawanRepository
                     ->orWhere('mst_karyawan.kd_entitas', 0)
                     ->orWhereNull('mst_karyawan.kd_entitas')
                     ->orderByRaw($this->orderRaw)
-                    ->orderBy('mst_karyawan.kd_cabang', 'asc')
                     ->orderBy('mst_karyawan.kd_entitas', 'asc')
                     ->simplePaginate(25);
             }
