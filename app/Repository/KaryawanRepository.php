@@ -339,8 +339,8 @@ class KaryawanRepository
                 ->orderBy('kd_cabang', 'asc')
                 ->orderBy('kd_entitas', 'asc')
                 ->simplePaginate(25);
-        } else if ($kategori == 'sub divisi') {
-            $entitas = $request['subDivisi'] ?? $request['divisi'];
+        } else if ($kategori == 'sub_divisi') {
+            $entitas = $request['sub_divisi'] ?? $request['divisi'];
 
             $bagian = DB::table('mst_bagian')->where('kd_entitas', $entitas)
                 ->pluck('kd_bagian');
