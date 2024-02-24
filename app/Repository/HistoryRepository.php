@@ -129,12 +129,14 @@ class HistoryRepository
         return $returnData;
     }
 
-    public function getRincianKaryawn($nip) {
+    public function getRincianKaryawn($nip)
+    {
         $returnData = new stdClass;
         $data = DB::table('mst_karyawan as m')
             ->select(
                 'm.nip',
                 'm.nama_karyawan',
+                'm.jk',
                 'm.status_jabatan',
                 'j.nama_jabatan',
                 DB::raw("CONCAT(p.golongan, ' - ', p.pangkat) AS pangkat_golongan"),
@@ -148,6 +150,7 @@ class HistoryRepository
 
         $returnData->nip = $data->nip ?? null;
         $returnData->nama_karyawan = $data->nama_karyawan ?? null;
+        $returnData->jk = $data->jk ?? null;
         $returnData->status_jabatan = $data->status_jabatan ?? null;
         $returnData->nama_jabatan = $data->nama_jabatan ?? null;
         $returnData->pangkat_golongan = $data->pangkat_golongan ?? null;
