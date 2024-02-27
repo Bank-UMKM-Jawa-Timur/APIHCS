@@ -397,4 +397,101 @@ class LaporanRepository
             return $dataGaji->items();
         }
     }
+
+    public function listDpp(Request $request) {
+        $orderRaw = "
+            CASE 
+            WHEN karyawan.kd_jabatan='DIRUT' THEN 1
+            WHEN karyawan.kd_jabatan='DIRUMK' THEN 2
+            WHEN karyawan.kd_jabatan='DIRPEM' THEN 3
+            WHEN karyawan.kd_jabatan='DIRHAN' THEN 4
+            WHEN karyawan.kd_jabatan='KOMU' THEN 5
+            WHEN karyawan.kd_jabatan='KOM' THEN 7
+            WHEN karyawan.kd_jabatan='STAD' THEN 8
+            WHEN karyawan.kd_jabatan='PIMDIV' THEN 9
+            WHEN karyawan.kd_jabatan='PSD' THEN 10
+            WHEN karyawan.kd_jabatan='PC' THEN 11
+            WHEN karyawan.kd_jabatan='PBP' THEN 12
+            WHEN karyawan.kd_jabatan='PBO' THEN 13
+            WHEN karyawan.kd_jabatan='PEN' THEN 14
+            WHEN karyawan.kd_jabatan='ST' THEN 15
+            WHEN karyawan.kd_jabatan='NST' THEN 16
+            WHEN karyawan.kd_jabatan='IKJP' THEN 17 END ASC
+        ";
+        $kategori = strtolower($request->get('kategori'));
+        $bulan = (int) $request->get('bulan');
+        $tahun = (int) $request->get('tahun');
+
+        if($kategori == 'keseluruhan') {
+            $dataDpp = DB::table('gaji_per_bulan as gaji')
+                ->join('batch_gaji_per_bulan as batch', 'batch.id', 'gaji.batch_id')
+                ->whereNull('batch.deleted_at')
+                ->select(
+                    'batch.kd_entitas',
+                    DB::raw("SUM(gaji.dpp) as total_dpp")
+                )
+                ->where('gaji.bulan', $bulan)
+                ->where('gaji.tahun', $tahun)
+                ->groupBy('batch.kd_entitas')
+                ->get();
+
+            foreach($dataDpp as $key => $value) {
+                $value->total_dpp = number_format(($value->total_dpp ?? 0), 0, ',', '.');
+
+                $kantor = '';
+                if ($value->kd_entitas == '000') {
+                    $kantor = 'Pusat';
+                } else {
+                    $kantor = DB::table('mst_cabang')
+                        ->where('kd_cabang', $value->kd_entitas)
+                        ->first()?->nama_cabang;
+                }
+
+                $value->kantor = $kantor;
+            }
+
+            return $dataDpp;
+        } else {
+            $kantor = strtolower($request->get('kantor'));
+
+            if($kantor == 'pusat') {
+                $dataDpp =  DB::table('gaji_per_bulan as gaji')
+                    ->join('batch_gaji_per_bulan as batch', 'batch.id', 'gaji.batch_id')
+                    ->whereNull('batch.deleted_at')
+                    ->where('batch.kd_entitas', '000')
+                    ->where('gaji.tahun', $tahun)
+                    ->where('gaji.bulan', $bulan)
+                    ->join('mst_karyawan as karyawan', 'karyawan.nip', 'gaji.nip')
+                    ->select(
+                        'karyawan.nip',
+                        'karyawan.nama_karyawan',
+                        'gaji.dpp'
+                    )
+                    ->orderByRaw($orderRaw)
+                    ->simplePaginate(10);
+            } else {
+                $kd_cabang = $request->get('kd_cabang');
+                $dataDpp = DB::table('gaji_per_bulan as gaji')
+                    ->join('batch_gaji_per_bulan as batch', 'batch.id', 'gaji.batch_id')
+                    ->whereNull('batch.deleted_at')
+                    ->where('batch.kd_entitas', $kd_cabang)
+                    ->where('gaji.tahun', $tahun)
+                    ->where('gaji.bulan', $bulan)
+                    ->join('mst_karyawan as karyawan', 'karyawan.nip', 'gaji.nip')
+                    ->select(
+                        'karyawan.nip',
+                        'karyawan.nama_karyawan',
+                        'gaji.dpp'
+                    )
+                    ->orderByRaw($orderRaw)
+                    ->simplePaginate(10);
+            }
+
+            foreach ($dataDpp as $key => $value) {
+                $value->dpp = number_format(($value->dpp ?? 0), 0, ',', '.');
+            }
+
+            return $dataDpp->items();
+        }
+    }
 }
