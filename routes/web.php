@@ -70,6 +70,11 @@ $router->group(['prefix' => 'history'], function () use ($router) {
 $router->group(['prefix' => 'surat-peringatan'], function () use ($router) {
     $router->get('/', 'KaryawanController@listSP');
     $router->get('/{id}', 'KaryawanController@detailSP');
+// Laporan
+$router->group(['prefix' => 'laporan'], function () use ($router) {
+    $router->get('/mutasi', 'LaporanController@listMutasi');
+    $router->get('/promosi', 'LaporanController@listPromosi');
+    $router->get('/demosi', 'LaporanController@listDemosi');
 });
 
 $router->get('/cabang', 'CabangController@showCabang');
