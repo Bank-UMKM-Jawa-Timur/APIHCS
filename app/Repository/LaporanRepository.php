@@ -285,6 +285,8 @@ class LaporanRepository
         if ($kategori == 'keseluruhan')  {
             $dataGaji = DB::table('gaji_per_bulan AS gaji')
                 ->join('mst_karyawan as karyawan', 'gaji.nip', 'karyawan.nip')
+                ->join('batch_gaji_per_bulan as batch', 'batch.id', 'gaji.batch_id')
+                ->whereNull('batch.deleted_at')
                 ->whereNull('tanggal_penonaktifan')
                 ->select(
                     // 'karyawan.nip',
@@ -348,6 +350,8 @@ class LaporanRepository
                     ->toArray();
                 $dataGaji = DB::table('gaji_per_bulan AS gaji')
                     ->join('mst_karyawan as karyawan', 'gaji.nip', 'karyawan.nip')
+                    ->join('batch_gaji_per_bulan as batch', 'batch.id', 'gaji.batch_id')
+                    ->whereNull('batch.deleted_at')
                     ->whereNull('tanggal_penonaktifan')
                     ->whereNotIn('karyawan.kd_entitas', $kd_cabang)
                     ->orWhere('karyawan.kd_entitas', 0)
@@ -367,6 +371,8 @@ class LaporanRepository
                 $kd_cabang = $request->get('kd_cabang');
                 $dataGaji = DB::table('gaji_per_bulan AS gaji')
                     ->join('mst_karyawan as karyawan', 'gaji.nip', 'karyawan.nip')
+                    ->join('batch_gaji_per_bulan as batch', 'batch.id', 'gaji.batch_id')
+                    ->whereNull('batch.deleted_at')
                     ->whereNull('tanggal_penonaktifan')
                     ->where('karyawan.kd_entitas', $kd_cabang)
                     ->select(
