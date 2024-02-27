@@ -257,4 +257,144 @@ class LaporanRepository
         }
         return $returnData;
     }
+
+    public function listJamsostek(Request $request) {
+        $orderRaw = "
+            CASE 
+            WHEN karyawan.kd_jabatan='DIRUT' THEN 1
+            WHEN karyawan.kd_jabatan='DIRUMK' THEN 2
+            WHEN karyawan.kd_jabatan='DIRPEM' THEN 3
+            WHEN karyawan.kd_jabatan='DIRHAN' THEN 4
+            WHEN karyawan.kd_jabatan='KOMU' THEN 5
+            WHEN karyawan.kd_jabatan='KOM' THEN 7
+            WHEN karyawan.kd_jabatan='STAD' THEN 8
+            WHEN karyawan.kd_jabatan='PIMDIV' THEN 9
+            WHEN karyawan.kd_jabatan='PSD' THEN 10
+            WHEN karyawan.kd_jabatan='PC' THEN 11
+            WHEN karyawan.kd_jabatan='PBP' THEN 12
+            WHEN karyawan.kd_jabatan='PBO' THEN 13
+            WHEN karyawan.kd_jabatan='PEN' THEN 14
+            WHEN karyawan.kd_jabatan='ST' THEN 15
+            WHEN karyawan.kd_jabatan='NST' THEN 16
+            WHEN karyawan.kd_jabatan='IKJP' THEN 17 END ASC
+        ";
+        $kategori = strtolower($request->get('kategori'));
+        $bulan = (int) $request->get('bulan');
+        $tahun = (int) $request->get('tahun');
+
+        if ($kategori == 'keseluruhan')  {
+            $dataGaji = DB::table('gaji_per_bulan AS gaji')
+                ->join('mst_karyawan as karyawan', 'gaji.nip', 'karyawan.nip')
+                ->whereNull('tanggal_penonaktifan')
+                ->select(
+                    // 'karyawan.nip',
+                    // 'karyawan.nama_karyawan',
+                    // DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti) AS total_gaji"),
+                    DB::raw("COUNT(karyawan.nip) AS total_karyawan"),
+                    DB::raw("IF(karyawan.kd_entitas NOT IN(select kd_cabang from mst_cabang) OR karyawan.kd_entitas IS NULL, '000', karyawan.kd_entitas) AS kd_kantor"),
+                    DB::raw("SUM(
+                        IF(
+                            (gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti) > 9077600, 
+                            0.001 * (gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti), 
+                            0.001 * 9077600)
+                    ) AS jp_1"),
+                    DB::raw("SUM(
+                        IF(
+                            (gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti) > 9077600, 
+                            0.002 * (gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti), 
+                            0.002 * 9077600)
+                    ) AS jp_2"),
+                    DB::raw("SUM(
+                        (0.0024 * (gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti))
+                    ) AS jkk"),
+                    DB::raw("SUM(
+                        (0.003 * (gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti))
+                    ) AS jkm"),
+                    DB::raw("SUM(
+                        (0.0057 * (gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti))
+                    ) AS jht")
+                )
+                ->where('gaji.bulan', $bulan)
+                ->where('gaji.tahun', $tahun)
+                ->groupBy('kd_kantor')
+                ->get();
+            
+            foreach($dataGaji as $key => $value) {
+                $kantor = '';
+
+                $value->total_jp = $value->jp_1 + $value->jp_2;
+                if($value->kd_kantor == '000')
+                    $kantor = 'Pusat';
+                else{
+                    $kantor = DB::table('mst_cabang')
+                        ->where('kd_cabang', $value->kd_kantor)
+                        ->first()?->nama_cabang;
+                }
+                $value->kantor = $kantor;
+                $value->jp_1 = number_format(round($value->jp_1), 0, ',', '.');
+                $value->jp_2 = number_format(round($value->jp_2), 0, ',', '.');
+                $value->jkk = number_format(round($value->jkk), 0, ',', '.');
+                $value->jkm = number_format(round($value->jkm), 0, ',', '.');
+                $value->jht = number_format(round($value->jht), 0, ',', '.');
+                $value->total_jp = number_format(round($value->total_jp), 0, ',', '.');
+            }
+            return $dataGaji;
+        } else {
+            $kantor = strtolower($request->get('kantor'));
+            if($kantor == 'pusat') {
+                $kd_cabang = DB::table('mst_cabang')
+                    ->select('kd_cabang')
+                    ->pluck('kd_cabang')
+                    ->toArray();
+                $dataGaji = DB::table('gaji_per_bulan AS gaji')
+                    ->join('mst_karyawan as karyawan', 'gaji.nip', 'karyawan.nip')
+                    ->whereNull('tanggal_penonaktifan')
+                    ->whereNotIn('karyawan.kd_entitas', $kd_cabang)
+                    ->orWhere('karyawan.kd_entitas', 0)
+                    ->orWhereNull('karyawan.kd_entitas')
+                    ->select(
+                        'karyawan.nip',
+                        'karyawan.nama_karyawan',
+                        DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti) AS total_gaji"),
+                        DB::raw("IF(karyawan.kd_entitas NOT IN(select kd_cabang from mst_cabang), '000', karyawan.kd_entitas) AS kd_kantor")
+                    )
+                    ->where('gaji.bulan', $bulan)
+                    ->where('gaji.tahun', $tahun)
+                    ->orderByRaw($orderRaw)
+                    ->orderBy('karyawan.kd_entitas', 'asc')
+                    ->simplePaginate(10);
+            } else {
+                $kd_cabang = $request->get('kd_cabang');
+                $dataGaji = DB::table('gaji_per_bulan AS gaji')
+                    ->join('mst_karyawan as karyawan', 'gaji.nip', 'karyawan.nip')
+                    ->whereNull('tanggal_penonaktifan')
+                    ->where('karyawan.kd_entitas', $kd_cabang)
+                    ->select(
+                        'karyawan.nip',
+                        'karyawan.nama_karyawan',
+                        DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti) AS total_gaji"),
+                        DB::raw("IF(karyawan.kd_entitas NOT IN(select kd_cabang from mst_cabang), '000', karyawan.kd_entitas) AS kd_kantor")
+                    )
+                    ->where('gaji.bulan', $bulan)
+                    ->where('gaji.tahun', $tahun)
+                    ->orderByRaw($orderRaw)
+                    ->orderBy('karyawan.kd_entitas', 'asc')
+                    ->simplePaginate(10);
+            }
+            
+            foreach ($dataGaji as $key => $value) {
+                $perhitungan = new stdClass;
+                $perhitungan->jp_1 = number_format((($value->total_gaji > 9077600 ? 9077600 * 0.001 : $value->total_gaji * 0.001) ?? 0), 0, ',', '.');
+                $perhitungan->jp_2 = number_format((($value->total_gaji > 9077600 ? 9077600 * 0.002 : $value->total_gaji * 0.002) ?? 0), 0, ',', '.');
+                $perhitungan->total_jp = number_format((($value->total_gaji > 9077600 ? 9077600 * 0.001 : $value->total_gaji * 0.001) ?? 0) + (($value->total_gaji > 9077600 ? 9077600 * 0.002 : $value->total_gaji * 0.002) ?? 0), 0, ',', '.');
+                $perhitungan->jkk = number_format((($value->total_gaji * 0.0024) ?? 0), 4, ',', '.');
+                $perhitungan->jkm = number_format((($value->total_gaji * 0.003) ?? 0), 2, ',', '.');
+                $perhitungan->jht = number_format((($value->total_gaji * 0.057) ?? 0), 2, ',', '.');
+                
+                $value->perhitungan = $perhitungan;
+                $value->total_gaji = number_format($value->total_gaji, 0, ',', '.');
+            }
+            return $dataGaji->items();
+        }
+    }
 }

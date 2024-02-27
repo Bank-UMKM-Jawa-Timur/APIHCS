@@ -77,6 +77,7 @@ $router->group(['prefix' => 'laporan'], function () use ($router) {
     $router->get('/mutasi', 'LaporanController@listMutasi');
     $router->get('/promosi', 'LaporanController@listPromosi');
     $router->get('/demosi', 'LaporanController@listDemosi');
+    $router->get('/jamsostek', 'LaporanController@listJamsostek');
 });
 
 $router->get('/cabang', 'CabangController@showCabang');
