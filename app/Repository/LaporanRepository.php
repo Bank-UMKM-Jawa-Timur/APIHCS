@@ -292,29 +292,13 @@ class LaporanRepository
                     // 'karyawan.nip',
                     // 'karyawan.nama_karyawan',
                     // DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti) AS total_gaji"),
-                    DB::raw("COUNT(karyawan.nip) AS total_karyawan"),
+                    DB::raw("COUNT(gaji.nip) AS total_karyawan"),
                     DB::raw("IF(karyawan.kd_entitas NOT IN(select kd_cabang from mst_cabang) OR karyawan.kd_entitas IS NULL, '000', karyawan.kd_entitas) AS kd_kantor"),
-                    DB::raw("SUM(
-                        IF(
-                            (gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti) > 9077600, 
-                            0.001 * (gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti), 
-                            0.001 * 9077600)
-                    ) AS jp_1"),
-                    DB::raw("SUM(
-                        IF(
-                            (gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti) > 9077600, 
-                            0.002 * (gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti), 
-                            0.002 * 9077600)
-                    ) AS jp_2"),
-                    DB::raw("SUM(
-                        (0.0024 * (gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti))
-                    ) AS jkk"),
-                    DB::raw("SUM(
-                        (0.003 * (gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti))
-                    ) AS jkm"),
-                    DB::raw("SUM(
-                        (0.0057 * (gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti))
-                    ) AS jht")
+                    DB::raw("SUM(gaji.bpjs_tk) AS jp_1"),
+                    DB::raw("SUM(gaji.bpjs_tk_two) AS jp_2"),
+                    DB::raw("SUM(gaji.jkk) AS jkk"),
+                    DB::raw("SUM(gaji.jkm) AS jkm"),
+                    DB::raw("SUM(gaji.jht) AS jht")
                 )
                 ->where('gaji.bulan', $bulan)
                 ->where('gaji.tahun', $tahun)
@@ -360,7 +344,13 @@ class LaporanRepository
                         'karyawan.nip',
                         'karyawan.nama_karyawan',
                         DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti) AS total_gaji"),
-                        DB::raw("IF(karyawan.kd_entitas NOT IN(select kd_cabang from mst_cabang), '000', karyawan.kd_entitas) AS kd_kantor")
+                        DB::raw("IF(karyawan.kd_entitas NOT IN(select kd_cabang from mst_cabang), '000', karyawan.kd_entitas) AS kd_kantor"),
+                        'gaji.bpjs_tk as jp_1',
+                        'gaji.bpjs_tk_two as jp_2',
+                        DB::raw("(gaji.bpjs_tk + gaji.bpjs_tk_two) as total_jp"),
+                        'gaji.jkk as jkk',
+                        'gaji.jkm as jkm',
+                        'gaji.jht as jht',
                     )
                     ->where('gaji.bulan', $bulan)
                     ->where('gaji.tahun', $tahun)
@@ -379,7 +369,13 @@ class LaporanRepository
                         'karyawan.nip',
                         'karyawan.nama_karyawan',
                         DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti) AS total_gaji"),
-                        DB::raw("IF(karyawan.kd_entitas NOT IN(select kd_cabang from mst_cabang), '000', karyawan.kd_entitas) AS kd_kantor")
+                        DB::raw("IF(karyawan.kd_entitas NOT IN(select kd_cabang from mst_cabang), '000', karyawan.kd_entitas) AS kd_kantor"),
+                        'gaji.bpjs_tk as jp_1',
+                        'gaji.bpjs_tk_two as jp_2',
+                        DB::raw("(gaji.bpjs_tk + gaji.bpjs_tk_two) as total_jp"),
+                        'gaji.jkk as jkk',
+                        'gaji.jkm as jkm',
+                        'gaji.jht as jht',
                     )
                     ->where('gaji.bulan', $bulan)
                     ->where('gaji.tahun', $tahun)
@@ -390,15 +386,21 @@ class LaporanRepository
             
             foreach ($dataGaji as $key => $value) {
                 $perhitungan = new stdClass;
-                $perhitungan->jp_1 = number_format((($value->total_gaji > 9077600 ? 9077600 * 0.001 : $value->total_gaji * 0.001) ?? 0), 0, ',', '.');
-                $perhitungan->jp_2 = number_format((($value->total_gaji > 9077600 ? 9077600 * 0.002 : $value->total_gaji * 0.002) ?? 0), 0, ',', '.');
-                $perhitungan->total_jp = number_format((($value->total_gaji > 9077600 ? 9077600 * 0.001 : $value->total_gaji * 0.001) ?? 0) + (($value->total_gaji > 9077600 ? 9077600 * 0.002 : $value->total_gaji * 0.002) ?? 0), 0, ',', '.');
-                $perhitungan->jkk = number_format((($value->total_gaji * 0.0024) ?? 0), 4, ',', '.');
-                $perhitungan->jkm = number_format((($value->total_gaji * 0.003) ?? 0), 2, ',', '.');
-                $perhitungan->jht = number_format((($value->total_gaji * 0.057) ?? 0), 2, ',', '.');
+                $perhitungan->jp_1 = number_format(($value->jp_1 ?? 0), 0, ',', '.');
+                $perhitungan->jp_2 = number_format(($value->jp_2 ?? 0), 0, ',', '.');
+                $perhitungan->total_jp = number_format(($value->total_jp ?? 0), 0, ',', '.');
+                $perhitungan->jkk = number_format(($value->jkk ?? 0), 4, ',', '.');
+                $perhitungan->jkm = number_format(($value->jkm ?? 0), 2, ',', '.');
+                $perhitungan->jht = number_format(($value->jht ?? 0), 2, ',', '.');
                 
                 $value->perhitungan = $perhitungan;
                 $value->total_gaji = number_format($value->total_gaji, 0, ',', '.');
+                unset($value->jp_1);
+                unset($value->jp_2);
+                unset($value->total_jp);
+                unset($value->jkm);
+                unset($value->jht);
+                unset($value->jkk);
             }
             return $dataGaji->items();
         }
