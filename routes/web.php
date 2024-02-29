@@ -72,6 +72,10 @@ $router->group(['prefix' => 'surat-peringatan'], function () use ($router) {
     $router->get('/{id}', 'KaryawanController@detailSP');
 });
 
+$router->group(['prefix' => 'penghasilan'], function () use ($router) {
+    $router->get('/', 'PenghasilanController@listPenghasilan');
+});
+
 $router->get('/cabang', 'CabangController@showCabang');
 $router->get('/divisi', 'DivisiController@showDivisi');
 $router->get('/sub-divisi/{id}', 'SubdivisiController@showSubdivisi');
