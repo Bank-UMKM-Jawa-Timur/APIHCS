@@ -85,6 +85,7 @@ $router->group(['prefix' => 'laporan'], function () use ($router) {
 // Penghasilan
 $router->group(['prefix' => 'penghasilan'], function () use ($router) {
     $router->get('/', 'PenghasilanController@listPenghasilan');
+    $router->get('/{id}', 'PenghasilanController@detailPenghasilan');
 });
 
 $router->get('/cabang', 'CabangController@showCabang');

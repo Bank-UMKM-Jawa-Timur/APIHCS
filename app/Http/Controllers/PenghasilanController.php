@@ -58,4 +58,37 @@ class PenghasilanController extends Controller
             return response()->json($response, $responseCode);
         }
     }
+
+    public function detailPenghasilan($id, Request $request) {
+        $status = 0;
+        $message = '';
+        $responseCode = Response::HTTP_UNAUTHORIZED;
+        $data = null;
+
+        try {
+            $status = 1;
+            $message = 'Berhasil menampilkan list penghasilan.';
+            $responseCode = Response::HTTP_OK;
+            
+            $repo = new PenghasilanRepository;
+            $search = $request->get('search') ?? null;
+            $data = $repo->detailPenghasilan($id, $search);
+        } catch (Exception $e) {
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } catch (QueryException $e) {
+            $status = 0;
+            $message = 'Terjadi kesalahan. ' . $e->getMessage();
+            $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        } finally {
+            $response = [
+                'status' => $status,
+                'message' => $message,
+                'data' => $data
+            ];
+
+            return response()->json($response, $responseCode);
+        }
+    }
 }

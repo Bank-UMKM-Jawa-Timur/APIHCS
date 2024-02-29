@@ -293,6 +293,40 @@ class PenghasilanRepository
         return $data->items();
     }
 
+    public function detailPenghasilan($id, $search) {
+        $data = DB::table('batch_gaji_per_bulan AS batch')
+                ->join('gaji_per_bulan AS gaji', 'gaji.batch_id', 'batch.id')
+                ->join('pph_yang_dilunasi AS pph', 'pph.gaji_per_bulan_id', 'gaji.id')
+                ->join('mst_karyawan AS m', 'm.nip', 'gaji.nip')
+                ->leftJoin('mst_divisi AS md', 'md.kd_divisi', 'm.kd_entitas')
+                ->join('mst_cabang AS cab', 'cab.kd_cabang', 'batch.kd_entitas')
+                ->select(
+                    'm.nama_karyawan',
+                    'gaji.bulan',
+                    'gaji.tahun',
+                    'gaji.dpp',
+                    'gaji.jp',
+                    'gaji.bpjs_tk',
+                    'gaji.penambah_bruto_jamsostek',
+                    DB::raw('CAST(pph.insentif_kredit + pph.insentif_penagihan AS SIGNED) AS total_pajak_insentif'),
+                    DB::raw('CAST(pph.total_pph - pph.insentif_kredit + pph.insentif_penagihan AS SIGNED) AS hasil_pph'),
+                    DB::raw('CAST(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti + gaji.tj_fungsional AS SIGNED) AS bruto'),
+                    DB::raw('CAST(gaji.kredit_koperasi + gaji.iuran_koperasi + gaji.kredit_pegawai + gaji.iuran_ik + gaji.dpp + gaji.bpjs_tk AS SIGNED) AS total_potongan'),
+                    DB::raw('CAST(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti + gaji.tj_fungsional - (gaji.kredit_koperasi + gaji.iuran_koperasi + gaji.kredit_pegawai + gaji.iuran_ik + gaji.dpp + gaji.bpjs_tk) AS SIGNED) AS netto'),
+                )
+                ->where('batch.id', $id)
+                ->where(function ($query) use ($search) {
+                    if($search != null){
+                        $query->where('m.nama_karyawan', 'like', "%$search%");
+                    }
+                })
+                ->simplePaginate(10);
+                // ->get();
+
+        return $data->items();
+        // return $data;
+    }
+
     private static function getDatePenggajianSebelumnya($tanggal_penggajian, $kd_entitas) {
         $currentMonth = intval(date('m', strtotime($tanggal_penggajian)));
         $beforeMonth = $currentMonth - 1;
