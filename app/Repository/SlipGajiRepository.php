@@ -48,6 +48,7 @@ class SlipGajiRepository
                 'gaji.iuran_koperasi',
                 'gaji.kredit_pegawai',
                 'gaji.iuran_ik',
+                'gaji.bpjs_tk',
                 DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti + gaji.tj_transport + gaji.tj_pulsa + gaji.tj_vitamin + gaji.uang_makan) AS gaji"),
                 DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_telepon + gaji.tj_pelaksana + gaji.tj_kemahalan + gaji.tj_kesejahteraan) AS total_gaji"),
                 DB::raw("(gaji.uang_makan + gaji.tj_vitamin + gaji.tj_pulsa + gaji.tj_transport) AS total_tunjangan_lainnya"),
@@ -151,49 +152,19 @@ class SlipGajiRepository
                     $jamsostek = $jkk + $jht + $jkm + $bpjs_kesehatan + $jp_penambah;
                 }
 
-                // Get Potongan(JP1%, DPP 5%)
-                $nominal_jp = ($obj_gaji->bulan > 2) ? $jp_mar_des : $jp_jan_feb;
-                $gj_pokok = $obj_gaji->gj_pokok;
-                $tj_keluarga = $obj_gaji->tj_keluarga;
-                $tj_kesejahteraan = $obj_gaji->tj_kesejahteraan;
-
-                // DPP (Pokok + Keluarga + Kesejahteraan 50%) * 5%
-                $dpp = (($gj_pokok + $tj_keluarga) + ($tj_kesejahteraan * 0.5)) * ($persen_dpp / 100);
-                // dd($gj_pokok ,$tj_keluarga,$tj_kesejahteraan,$persen_dpp, $dpp);
-                if ($gaji >= $nominal_jp) {
-                    $jp_1_persen = round($nominal_jp * ($persen_jp_pengurang / 100), 2);
-                } else {
-                    $jp_1_persen = round($gaji * ($persen_jp_pengurang / 100), 2);
-                }
-                $potongan->dpp = $dpp;
-                $potongan->jp_1_persen = (int) $jp_1_persen;
+                $potongan->dpp = $value->dpp;
+                $potongan->jp_1_persen = (int) $value->bpjs_tk;
                 $potongan->kredit_koperasi = (int) $value->kredit_koperasi;
                 $potongan->iuran_koperasi = (int) $value->iuran_koperasi;
                 $potongan->kredit_pegawai = (int) $value->kredit_pegawai;
                 $potongan->iuran_ik = (int) $value->iuran_ik;
 
-                // Get BPJS TK
-                if ($obj_gaji->bulan > 2) {
-                    if ($total_gaji > $jp_mar_des) {
-                        $bpjs_tk = $jp_mar_des * 1 / 100;
-                    } else {
-                        $bpjs_tk = $total_gaji * 1 / 100;
-                    }
-                } else {
-                    if ($total_gaji >= $jp_jan_feb) {
-                        $bpjs_tk = $jp_jan_feb * 1 / 100;
-                    } else {
-                        $bpjs_tk = $total_gaji * 1 / 100;
-                    }
-                }
-                $bpjs_tk = round($bpjs_tk);
-
                 // Penghasilan rutin
                 $penghasilan_rutin = $gaji + $jamsostek;
                 $value->jamsostek = (int) $jamsostek;
-                $value->bpjs_tk = (int) $bpjs_tk;
+                $value->bpjs_tk = (int) $value->bpjs_tk;
                 $value->bpjs_kesehatan = (int) $bpjs_kesehatan;
-                $total_potongan = (int) $value->kredit_koperasi + (int) $value->iuran_koperasi + (int) $value->kredit_pegawai + (int) $value->iuran_ik + $dpp + $jp_1_persen;
+                $total_potongan = (int) $value->kredit_koperasi + (int) $value->iuran_koperasi + (int) $value->kredit_pegawai + (int) $value->iuran_ik + (int) $value->dpp + (int) $value->bpjs_tk;
                 $potongan->total_potongan = (int) $total_potongan;
                 $value->potongan = $potongan;
                 // End GET POTONGAN
@@ -249,6 +220,7 @@ class SlipGajiRepository
                 'gaji.iuran_koperasi',
                 'gaji.kredit_pegawai',
                 'gaji.iuran_ik',
+                'gaji.bpjs_tk',
                 DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_telepon + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_kemahalan + gaji.tj_pelaksana + gaji.tj_kesejahteraan + gaji.tj_multilevel + gaji.tj_ti + gaji.tj_transport + gaji.tj_pulsa + gaji.tj_vitamin + gaji.uang_makan) AS gaji"),
                 DB::raw("(gaji.gj_pokok + gaji.gj_penyesuaian + gaji.tj_keluarga + gaji.tj_jabatan + gaji.tj_teller + gaji.tj_perumahan + gaji.tj_telepon + gaji.tj_pelaksana + gaji.tj_kemahalan + gaji.tj_kesejahteraan) AS total_gaji"),
                 DB::raw("(gaji.uang_makan + gaji.tj_vitamin + gaji.tj_pulsa + gaji.tj_transport) AS total_tunjangan_lainnya"),
@@ -447,35 +419,19 @@ class SlipGajiRepository
             } else {
                 $jp_1_persen = round($gaji * ($persen_jp_pengurang / 100), 2);
             }
-            $potongan->dpp = (int) $dpp;
-            $potongan->jp_1_persen = (int) $jp_1_persen;
+            $potongan->dpp = (int) $data->dpp;
+            $potongan->jp_1_persen = (int) $data->bpjs_tk;
             $potongan->kredit_koperasi = (int) $data->kredit_koperasi;
             $potongan->iuran_koperasi = (int) $data->iuran_koperasi;
             $potongan->kredit_pegawai = (int) $data->kredit_pegawai;
             $potongan->iuran_ik = (int) $data->iuran_ik;
 
-            // Get BPJS TK
-            if ($obj_gaji->bulan > 2) {
-                if ($total_gaji > $jp_mar_des) {
-                    $bpjs_tk = $jp_mar_des * 1 / 100;
-                } else {
-                    $bpjs_tk = $total_gaji * 1 / 100;
-                }
-            } else {
-                if ($total_gaji >= $jp_jan_feb) {
-                    $bpjs_tk = $jp_jan_feb * 1 / 100;
-                } else {
-                    $bpjs_tk = $total_gaji * 1 / 100;
-                }
-            }
-            $bpjs_tk = round($bpjs_tk);
-
             // Penghasilan rutin
             $penghasilan_rutin = $gaji + $jamsostek;
             $data->jamsostek = (int) $jamsostek;
-            $data->bpjs_tk = (int) $bpjs_tk;
+            $data->bpjs_tk = (int) $data->bpjs_tk;
             $data->bpjs_kesehatan = (int) $bpjs_kesehatan;
-            $total_potongan = (int) $data->kredit_koperasi + (int) $data->iuran_koperasi + (int) $data->kredit_pegawai + (int) $data->iuran_ik + $dpp + $jp_1_persen;
+            $total_potongan = (int) $data->kredit_koperasi + (int) $data->iuran_koperasi + (int) $data->kredit_pegawai + (int) $data->iuran_ik + (int) $data->dpp + (int) $data->bpjs_tk;
             $potongan->total_potongan = (int) $total_potongan;
             $data->potongan = $potongan;
             // End GET POTONGAN
