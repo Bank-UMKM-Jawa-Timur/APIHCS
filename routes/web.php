@@ -92,6 +92,7 @@ $router->group(['prefix' => 'penghasilan'], function () use ($router) {
 // Rekap Tetap
 $router->group(['prefix' => 'rekap-tetap'], function () use ($router) {
     $router->get('/', 'RekapTetapController@listRekapTetap');
+    $router->get('/detail/{nip}', 'RekapTetapController@detailRekapTetap');
 });
 
 $router->get('/cabang', 'CabangController@showCabang');
