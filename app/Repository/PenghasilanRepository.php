@@ -327,6 +327,7 @@ class PenghasilanRepository
                 ->leftJoin('mst_divisi AS md', 'md.kd_divisi', 'm.kd_entitas')
                 ->join('mst_cabang AS cab', 'cab.kd_cabang', 'batch.kd_entitas')
                 ->select(
+                    'gaji.nip',
                     'm.nama_karyawan',
                     'gaji.bulan',
                     'gaji.tahun',
@@ -347,10 +348,8 @@ class PenghasilanRepository
                     }
                 })
                 ->simplePaginate(10);
-                // ->get();
 
         return $data->items();
-        // return $data;
     }
 
     public function getRincianPayroll($month, $year, $batch_id, $nip) {
