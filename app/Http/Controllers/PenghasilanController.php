@@ -108,8 +108,9 @@ class PenghasilanController extends Controller
             $month = $request->get('bulan');
             $year = $request->get('tahun');
             $batch_id = $request->get('batch_id');
+            $kategori = strtolower($request->get('kategori'));
 
-            $data = $repo->getRincianPayroll($month, $year, $batch_id, $nip);
+            $data = $repo->getRincianPayroll($month, $year, $batch_id, $nip, $kategori);
         } catch (Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();

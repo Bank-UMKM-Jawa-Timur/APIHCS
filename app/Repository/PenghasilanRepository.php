@@ -352,7 +352,7 @@ class PenghasilanRepository
         return $data->items();
     }
 
-    public function getRincianPayroll($month, $year, $batch_id, $nip) {
+    public function getRincianPayroll($month, $year, $batch_id, $nip, $kategori) {
         $returnData = new stdClass;
         $batch = DB::table('batch_gaji_per_bulan')->find($batch_id);
         if ($batch) {
@@ -1115,8 +1115,36 @@ class PenghasilanRepository
 
             $returnData->data = $karyawan;
         }
+        $return = new stdClass;
+        $return->nama_karyawan = $returnData->data->nama_karyawan;
+        if($kategori == 'rincian') {
+            $return->gaji_pokok = $returnData->data->gj_pokok ?? 0;
+            $return->tj_keluarga = $returnData->data->gaji->tj_keluarga ?? 0;
+            $return->tj_listrik = $returnData->data->gaji->tj_listrik ?? 0;
+            $return->tj_jabatan = $returnData->data->gaji->tj_jabatan ?? 0;
+            $return->tj_khusus = $returnData->data->gaji->tj_khusus ?? 0;
+            $return->tj_perumahan = $returnData->data->gaji->tj_perumahan ?? 0;
+            $return->tj_pelaksana = $returnData->data->gaji->tj_pelaksana ?? 0;
+            $return->tj_kemahalan = $returnData->data->gaji->tj_kemahalan ?? 0;
+            $return->tj_kesejahteraan = $returnData->data->gaji->tj_kesejahteraan ?? 0;
+            $return->tj_teller = $returnData->data->gaji->tj_teller ?? 0;
+            $return->penyesuaian = $returnData->data->gaji->gj_penyesuaian ?? 0;
+            $return->total_gaji = $returnData->data->gaji->total_gaji ?? 0;
+            $return->pph21 = $returnData->data->pph_dilunasi_bulan_ini ?? 0;
+        } else {
+            $return->gaji = $returnData->data->gaji->total_gaji ?? 0;
+            $return->no_rekening = $returnData->data->no_rekening ?? 0;
+            $return->bpjs_tk = $returnData->data->bpjs_tk ?? 0;
+            $return->dpp = $returnData->data->potongan->dpp ?? 0;
+            $return->kredit_koperasi = $returnData->data->gaji->kredit_koperasi ?? 0;
+            $return->iuran_koperasi = $returnData->data->gaji->iuran_koperasi ?? 0;
+            $return->kredit_pegawai = $returnData->data->gaji->kredit_pegawai ?? 0;
+            $return->iuran_ik = $returnData->data->gaji->iuran_ik ?? 0;
+            $return->total_potongan = $returnData->data->total_potongan ?? 0;
+            $return->total_yg_diterima = $returnData->data->total_yg_diterima ?? 0;
+        }
 
-        return $returnData->data;
+        return $return;
     }
 
     private static function getDatePenggajianSebelumnya($tanggal_penggajian, $kd_entitas) {
