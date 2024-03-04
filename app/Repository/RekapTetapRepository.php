@@ -2452,10 +2452,10 @@ class RekapTetapRepository
                 'brutoTHR' => $brutoTHR,
                 'brutoDanaPendidikan' => $brutoDanaPendidikan,
                 'brutoPenghargaanKinerja' => $brutoPenghargaanKinerja,
-                'brutoNataru' => ($brutoNataru > 0) ? $brutoNataru : null,
-                'brutoJaspro' => ($brutoJaspro > 0) ? $brutoJaspro : null,
-                'tambahanPenghasilan' => ($tambahanPenghasilan > 0) ? $tambahanPenghasilan : null,
-                'rekreasi' => ($rekreasi > 0) ? $rekreasi : null,
+                'brutoNataru' => ($brutoNataru > 0) ? $brutoNataru : 0,
+                'brutoJaspro' => ($brutoJaspro > 0) ? $brutoJaspro : 0,
+                'tambahanPenghasilan' => ($tambahanPenghasilan > 0) ? $tambahanPenghasilan : 0,
+                'rekreasi' => ($rekreasi > 0) ? $rekreasi : 0,
             ];
             array_push($bonusData, $dataBonus);
             $dataReturn->bonus = $bonusData;
