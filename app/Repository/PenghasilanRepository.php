@@ -35,7 +35,22 @@ class PenghasilanRepository
     }
     
     public function listPenghasilan($cabang, $status, $limit = 10, $page = 1, $search) {
+        $months = array(
+            1 => "Januari",
+            2 => "Februari",
+            3 => "Maret",
+            4 => "April",
+            5 => "Mei",
+            6 => "Juni",
+            7 => "Juli",
+            8 => "Agustus",
+            9 => "September",
+            10 => "Oktober",
+            11 => "November",
+            12 => "Desember"
+        );
         // return [$cabang, $status, $limit, $search];
+        $return = [];
         $data = DB::table('batch_gaji_per_bulan AS batch')
                 ->join('gaji_per_bulan AS gaji', 'gaji.batch_id', 'batch.id')
                 ->join('pph_yang_dilunasi AS pph', 'pph.gaji_per_bulan_id', 'gaji.id')
@@ -314,9 +329,24 @@ class PenghasilanRepository
                 }
             }
             $item->total_penyesuaian = $total_penyesuaian;
+
+            $returnData = new stdClass;
+            $returnData->id = $item->id;
+            $returnData->kategori = $item->nama_divisi ?? 'Pegawai';
+            $returnData->kantor = $item->kantor;
+            $returnData->tahun = $item->tahun;
+            $returnData->bulan = $months[(int) $item->bulan];
+            $returnData->tanggal = $item->tanggal_input;
+            $returnData->bruto = $item->bruto ?? 0;
+            $returnData->total_potongan = $item->total_potongan ?? 0;
+            $returnData->netto = $item->netto ?? 0;
+            $returnData->total_pph = $item->total_pph ?? 0;
+            $returnData->total_pajak_insentif = $item->total_pajak_insentif ?? 0;
+            $returnData->hasil_pph = $item->hasil_pph ?? 0;
+            array_push($return, $returnData);
         }
 
-        return $data->items();
+        return $return;
     }
 
     public function detailPenghasilan($id, $search) {
