@@ -411,7 +411,7 @@ class PenghasilanRepository
                                     )
                                     ->whereIn('enum', ['Suami', 'Istri']);
                                 },
-                                'gaji' => function($query) use ($month, $year) {
+                                'gaji' => function($query) use ($batch_id) {
                                     $query->select(
                                         'gaji_per_bulan.id',
                                         'nip',
@@ -450,8 +450,7 @@ class PenghasilanRepository
                                     )
                                     ->join('batch_gaji_per_bulan AS batch', 'batch.id', 'gaji_per_bulan.batch_id')
                                     ->whereNull('batch.deleted_at')
-                                    ->where('bulan', $month)
-                                    ->where('tahun', $year);
+                                    ->where('batch.id', $batch_id);
                                 },
                                 'tunjangan' => function($query) use ($month, $year) {
                                     $query->whereMonth('tunjangan_karyawan.created_at', $month)
@@ -524,18 +523,24 @@ class PenghasilanRepository
                                     ) AS status
                                 "),
                                 'mst_karyawan.status_karyawan',
-                                DB::raw("IF(
-                                        (SELECT m.kd_entitas FROM mst_karyawan AS m WHERE m.nip = `mst_karyawan`.`nip` AND m.kd_entitas IN(SELECT mst_cabang.kd_cabang FROM mst_cabang) LIMIT 1
-                                    ), 1, 0) AS status_kantor"
-                                ),
+                                DB::raw("IF((SELECT m.kd_entitas FROM mst_karyawan AS m WHERE m.nip = `mst_karyawan`.`nip` AND m.kd_entitas IN(SELECT mst_cabang.kd_cabang FROM mst_cabang) LIMIT 1), 1, 0) AS status_kantor"),
                                 'batch.tanggal_input'
                             )
                             ->join('gaji_per_bulan', 'gaji_per_bulan.nip', 'mst_karyawan.nip')
                             ->join('batch_gaji_per_bulan AS batch', 'batch.id', 'gaji_per_bulan.batch_id')
                             ->join('mst_cabang AS c', 'c.kd_cabang', 'batch.kd_entitas')
-                            ->where(function($query) use ($batch) {
-                                $query->where('batch.id', $batch->id);
-                            })
+                            ->orderByRaw("
+                                CASE WHEN mst_karyawan.kd_jabatan='PIMDIV' THEN 1
+                                WHEN mst_karyawan.kd_jabatan='PSD' THEN 2
+                                WHEN mst_karyawan.kd_jabatan='PC' THEN 3
+                                WHEN mst_karyawan.kd_jabatan='PBP' THEN 4
+                                WHEN mst_karyawan.kd_jabatan='PBO' THEN 5
+                                WHEN mst_karyawan.kd_jabatan='PEN' THEN 6
+                                WHEN mst_karyawan.kd_jabatan='ST' THEN 7
+                                WHEN mst_karyawan.kd_jabatan='NST' THEN 8
+                                WHEN mst_karyawan.kd_jabatan='IKJP' THEN 9 END ASC
+                            ")
+                            ->whereNull('batch.deleted_at')
                             ->whereRaw("(tanggal_penonaktifan IS NULL OR ($month = MONTH(tanggal_penonaktifan) AND is_proses_gaji = 1))")
                             ->where('gaji_per_bulan.nip', $nip)
                             ->orderByRaw($this->orderRaw)
@@ -544,6 +549,7 @@ class PenghasilanRepository
                             ->orderBy('nip', 'asc')
                             ->orderBy('batch.kd_entitas')
                             ->get();
+
         foreach ($data as $key => $karyawan) {
             $insentif = DB::table('pph_yang_dilunasi')
                         ->select(
@@ -723,6 +729,17 @@ class PenghasilanRepository
                                             ->where(function($query) use ($karyawan) {
                                                 $query->whereRelation('allGajiByKaryawan', 'nip', $karyawan->nip);
                                             })
+                                            ->orderByRaw("
+                                                CASE WHEN mst_karyawan.kd_jabatan='PIMDIV' THEN 1
+                                                WHEN mst_karyawan.kd_jabatan='PSD' THEN 2
+                                                WHEN mst_karyawan.kd_jabatan='PC' THEN 3
+                                                WHEN mst_karyawan.kd_jabatan='PBP' THEN 4
+                                                WHEN mst_karyawan.kd_jabatan='PBO' THEN 5
+                                                WHEN mst_karyawan.kd_jabatan='PEN' THEN 6
+                                                WHEN mst_karyawan.kd_jabatan='ST' THEN 7
+                                                WHEN mst_karyawan.kd_jabatan='NST' THEN 8
+                                                WHEN mst_karyawan.kd_jabatan='IKJP' THEN 9 END ASC
+                                            ")
                                             ->first();
 
             if ($karyawan_bruto) {
@@ -935,6 +952,7 @@ class PenghasilanRepository
             $bonus_sum = $penghasilanBruto->total_bonus;
             $pengurang = $penguranganPenghasilan->total_pengurangan_bruto;
             $total_ket = $month_on_year_paid;
+
             // Get PPh21 PP58
             $pph21_pp58 = HitungPPH::getPPh58($month, $year, $karyawan, $ptkp, $karyawan->tanggal_input, $total_gaji, $tunjangan_rutin);
             $perhitunganPph21->pph21_pp58 = $pph21_pp58;
