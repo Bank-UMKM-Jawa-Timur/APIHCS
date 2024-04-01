@@ -38,8 +38,13 @@ class PenghasilanController extends Controller
             $page = $request->get('page') ?? 1;
             $search = $request->get('search') ?? null;
 
+            // Filter
+            $bulan = $request->get('bulan') ?? null;
+            $tahun = $request->get('tahun') ?? null;
+            $kantor = strtolower($request->get('kantor')) ?? null;
+
             // $data = $status;
-            $data = $repo->listPenghasilan($cabang, $status, $limit, $page, $search);
+            $data = $repo->listPenghasilan($cabang, $status, $limit, $page, $search, $bulan, $tahun);
         } catch (Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();

@@ -34,7 +34,7 @@ class PenghasilanRepository
         ";
     }
     
-    public function listPenghasilan($cabang, $status, $limit = 10, $page = 1, $search) {
+    public function listPenghasilan($cabang, $status, $limit = 10, $page = 1, $search, $bulanFilter, $tahunFilter) {
         $months = array(
             1 => "Januari",
             2 => "Februari",
@@ -92,6 +92,16 @@ class PenghasilanRepository
                 ->where(function ($query) use ($cabang) {
                     if ($cabang != null) {
                         $query->where('batch.kd_entitas', $cabang);
+                    }
+                })
+                ->where(function ($query) use ($bulanFilter, $tahunFilter) {
+                    if($bulanFilter != null) {
+                        $query->whereMonth('batch.tanggal_input', $bulanFilter);
+                    } else if($tahunFilter != null) {
+                        $query->whereYear('batch.tanggal_input', $tahunFilter);
+                    } else if($bulanFilter != null && $bulanFilter != null) {
+                        $query->whereMonth('batch.tanggal_input', $bulanFilter)
+                            ->whereYear('batch.tanggal_input', $tahunFilter);
                     }
                 })
                 ->where('batch.status', $status)
