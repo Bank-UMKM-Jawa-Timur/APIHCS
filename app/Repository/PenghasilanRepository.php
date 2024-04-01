@@ -95,11 +95,11 @@ class PenghasilanRepository
                     }
                 })
                 ->where(function ($query) use ($bulanFilter, $tahunFilter) {
-                    if($bulanFilter != null) {
+                    if($bulanFilter != null && $tahunFilter == null) {
                         $query->whereMonth('batch.tanggal_input', $bulanFilter);
-                    } else if($tahunFilter != null) {
+                    } else if($tahunFilter != null && $bulanFilter == null) {
                         $query->whereYear('batch.tanggal_input', $tahunFilter);
-                    } else if($bulanFilter != null && $bulanFilter != null) {
+                    } else if($bulanFilter != null && $tahunFilter != null) {
                         $query->whereMonth('batch.tanggal_input', $bulanFilter)
                             ->whereYear('batch.tanggal_input', $tahunFilter);
                     }
