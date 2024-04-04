@@ -41,7 +41,7 @@ class KaryawanController extends Controller
                 ->where('email', $request->get('nip'))
                 ->join('model_has_roles', 'users.id', 'model_id')
                 ->join('roles', 'roles.id', 'model_has_roles.role_id')
-                ->where('roles.name', 'SDM')
+                // ->where('roles.name', 'SDM')
                 ->select('users.*')
                 ->first();
             if ($karyawan != null || $user != null) {
