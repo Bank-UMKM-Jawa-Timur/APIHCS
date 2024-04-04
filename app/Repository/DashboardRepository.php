@@ -47,11 +47,38 @@ class DashboardRepository
             ->count();
         // End get karyawan pensiun
 
+        // Get Perubahan Terakhir
+        $aktif = DB::table('log_activities')
+            ->whereRaw("activity LIKE '%demosi%' OR activity LIKE '%promosi%' OR activity LIKE '%mutasi%' OR activity LIKE '%update karyawan%'")
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $masuk = DB::table('log_activities')
+            ->whereRaw("activity LIKE '%menambah karyawan baru%'")
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $keluar = DB::table('log_activities')
+            ->whereRaw("activity LIKE '%menonaktifkan karyawan%'")
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $pensiun = DB::table('log_activities')
+            ->whereRaw("activity LIKE '%pensiun%'")
+            ->orderBy('id', 'desc')
+            ->first();
+        $perubahanTerakhir = new stdClass;
+        $perubahanTerakhir->aktif = $aktif?->created_at ?? null;
+        $perubahanTerakhir->masuk = $masuk?->created_at ?? null;
+        $perubahanTerakhir->keluar = $keluar?->created_at ?? null;
+        $perubahanTerakhir->pensiun = $pensiun?->created_at ?? null; 
+
         $returnData->total_gaji =  number_format($total, 0, ',', '.');
         $returnData->total_karyawan = count($karyawan);
         $returnData->karyawan_masuk = $karyawanMasuk;
         $returnData->karyawan_keluar = $karyawanKeluar;
         $returnData->karyawan_pensiun = $karyawanPensiun;
+        $returnData->perubahan_terakhir = $perubahanTerakhir;
 
         return $returnData;
     }
