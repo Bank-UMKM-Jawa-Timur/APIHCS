@@ -676,7 +676,8 @@ class KaryawanController extends Controller
         }
     }
 
-    public function listMutasi(Request $request) {
+    public function listMutasi(Request $request)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
@@ -691,11 +692,11 @@ class KaryawanController extends Controller
             $search = $request->get('search') ?? null;
             $repo = new KaryawanRepository;
             $data = $repo->listMutasi($search, $limit);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch(QueryException $e) {
+        } catch (QueryException $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
@@ -710,7 +711,8 @@ class KaryawanController extends Controller
         }
     }
 
-    public function listPromosi(Request $request) {
+    public function listPromosi(Request $request)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
@@ -725,11 +727,11 @@ class KaryawanController extends Controller
             $search = $request->get('search') ?? null;
             $repo = new KaryawanRepository;
             $data = $repo->listPromosi($search, $limit);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch(QueryException $e) {
+        } catch (QueryException $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
@@ -744,7 +746,8 @@ class KaryawanController extends Controller
         }
     }
 
-    public function listDemosi(Request $request) {
+    public function listDemosi(Request $request)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
@@ -759,11 +762,11 @@ class KaryawanController extends Controller
             $search = $request->get('search') ?? null;
             $repo = new KaryawanRepository;
             $data = $repo->listDemosi($search, $limit);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch(QueryException $e) {
+        } catch (QueryException $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
@@ -778,7 +781,8 @@ class KaryawanController extends Controller
         }
     }
 
-    public function listPenonaktifan(Request $request) {
+    public function listPenonaktifan(Request $request)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
@@ -793,11 +797,11 @@ class KaryawanController extends Controller
             $search = $request->get('search') ?? null;
             $repo = new KaryawanRepository;
             $data = $repo->listPenonaktifan($search, $limit);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch(QueryException $e) {
+        } catch (QueryException $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
@@ -810,10 +814,11 @@ class KaryawanController extends Controller
 
             return response()->json($response, $responseCode);
         }
-        
+
     }
 
-    public function listPJS(Request $request) {
+    public function listPJS(Request $request)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
@@ -828,11 +833,11 @@ class KaryawanController extends Controller
             $search = $request->get('search') ?? null;
             $repo = new KaryawanRepository;
             $data = $repo->listPJS($search, $limit);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch(QueryException $e) {
+        } catch (QueryException $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
@@ -842,12 +847,13 @@ class KaryawanController extends Controller
                 'message' => $message,
                 'data' => $data
             ];
-         
+
             return response()->json($response, $responseCode);
         }
     }
 
-    public function listSP(Request $request) {
+    public function listSP(Request $request)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
@@ -862,11 +868,11 @@ class KaryawanController extends Controller
             $search = $request->get('search') ?? null;
             $repo = new KaryawanRepository;
             $data = $repo->listSP($search, $limit);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch(QueryException $e) {
+        } catch (QueryException $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
@@ -881,7 +887,8 @@ class KaryawanController extends Controller
         }
     }
 
-    public function detailSP($id) {
+    public function detailSP($id)
+    {
         $status = 0;
         $message = '';
         $responseCode = Response::HTTP_UNAUTHORIZED;
@@ -894,11 +901,11 @@ class KaryawanController extends Controller
 
             $repo = new KaryawanRepository;
             $data = $repo->detailSP($id);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        } catch(QueryException $e) {
+        } catch (QueryException $e) {
             $status = 0;
             $message = 'Terjadi kesalahan. ' . $e->getMessage();
             $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
@@ -906,7 +913,7 @@ class KaryawanController extends Controller
             $response = [
                 'status' => $status,
                 'message' => $message,
-                'data' => $data
+                'data' => array($data),
             ];
 
             return response()->json($response, $responseCode);
